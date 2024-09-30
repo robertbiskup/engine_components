@@ -70,10 +70,12 @@ export class SimpleRenderer extends BaseRenderer {
     const { canvas } = context;
     canvas.addEventListener("webglcontextlost", this.onContextLost, false);
     canvas.addEventListener("webglcontextrestored", this.onContextBack, false);
+    this.needsUpdate = true;
   }
 
   /** {@link Updateable.update} */
   update() {
+    
     if (!this.enabled || !this.currentWorld) return;
     this.onBeforeUpdate.trigger(this);
     const scene = this.currentWorld.scene.three;
