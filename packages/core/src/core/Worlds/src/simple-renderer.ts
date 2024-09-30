@@ -17,6 +17,7 @@ export class SimpleRenderer extends BaseRenderer {
    * Default is `true`.
    */
   enabled = true;
+  needsUpdate: boolean;
 
   /**
    * The HTML container of the THREE.js canvas where the scene is rendered.
