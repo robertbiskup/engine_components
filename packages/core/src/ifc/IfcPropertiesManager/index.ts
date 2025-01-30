@@ -202,9 +202,8 @@ export class IfcPropertiesManager extends Component implements Disposable {
    */
   async newPset(model: FragmentsGroup, name: string, description?: string) {
     const schema = IfcPropertiesManager.getIFCSchema(model);
-    const { ownerHistoryHandle } = await this.getOwnerHistory(model);
+    const { handle: ownerHistoryHandle } = await this.getOwnerHistory(model);
 
-    // Create the Pset
     const psetGlobalId = this.newGUID(model);
     const psetName = new WEBIFC[schema].IfcLabel(name);
     const psetDescription = description
@@ -217,23 +216,11 @@ export class IfcPropertiesManager extends Component implements Disposable {
       psetDescription,
       [],
     );
+
     pset.expressID = this.getNewExpressID(model);
+    await this.setData(model, pset);
 
-    // Create the Pset relation
-    const relGlobalId = this.newGUID(model);
-    const rel = new WEBIFC[schema].IfcRelDefinesByProperties(
-      relGlobalId,
-      ownerHistoryHandle,
-      null,
-      null,
-      [],
-      new WEBIFC.Handle(pset.expressID),
-    );
-    rel.expressID = this.getNewExpressID(model);
-
-    await this.setData(model, pset, rel);
-
-    return { pset, rel };
+    return { pset };
   }
 
   /**
@@ -370,7 +357,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
     indexer.addEntitiesRelation(
       model,
       psetID,
-      { type: WEBIFC.IFCRELDEFINESBYPROPERTIES, inv: "IsDefinedBy" },
+      { type: WEBIFC.IFCRELDEFINESBYPROPERTIES, inv: "DefinesOcurrence" },
       ...expressIDs,
     );
   }
@@ -429,7 +416,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
       throw new Error(`IfcPropertiesManager: ${relName} is unsoported.`);
     }
 
-    const schema = model.ifcMetadata.schema;
+    const schema = IfcPropertiesManager.getIFCSchema(model);
     const attributePositions = ifcRelAttrsPosition[relName];
     // @ts-ignore safe to use ts-ignore as we are checking in the following line if the class exists.
     const RelClass = WEBIFC[schema][relName];
@@ -511,7 +498,10 @@ export class IfcPropertiesManager extends Component implements Disposable {
     for (const expressID of changes) {
       const data = (await model.getProperties(expressID)) as any;
       if (!data) {
-        ifcApi.DeleteLine(modelID, expressID);
+        // If the expressID doesn't exist in the original file, then do nothing.
+        // This prevents a memory access out of bounds error from WebIfc.
+        const existed = ifcApi.GetLine(modelID, expressID);
+        if (existed) ifcApi.DeleteLine(modelID, expressID);
       } else {
         ifcApi.WriteLine(modelID, data);
       }
@@ -620,7 +610,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
     return new WEBIFC[schema].IfcGloballyUniqueId(UUID.create());
   }
 
-  private async getOwnerHistory(model: FragmentsGroup) {
+  async getOwnerHistory(model: FragmentsGroup) {
     const ownerHistories = await model.getAllPropertiesOfType(
       WEBIFC.IFCOWNERHISTORY,
     );
@@ -628,12 +618,12 @@ export class IfcPropertiesManager extends Component implements Disposable {
       throw new Error("No OwnerHistory was found.");
     }
     const keys = Object.keys(ownerHistories).map((key) => parseInt(key, 10));
-    const ownerHistory = ownerHistories[keys[0]];
-    const ownerHistoryHandle = new WEBIFC.Handle(ownerHistory.expressID);
-    return { ownerHistory, ownerHistoryHandle };
+    const entity = ownerHistories[keys[0]];
+    const handle = new WEBIFC.Handle(entity.expressID);
+    return { entity, handle };
   }
 
-  private registerChange(model: FragmentsGroup, ...expressID: number[]) {
+  registerChange(model: FragmentsGroup, ...expressID: number[]) {
     if (!this.changeMap[model.uuid]) {
       this.changeMap[model.uuid] = new Set();
     }
@@ -643,7 +633,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
     }
   }
 
-  private async newSingleProperty(
+  async newSingleProperty(
     model: FragmentsGroup,
     type: string,
     name: string,

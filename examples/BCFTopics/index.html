@@ -22,29 +22,48 @@
       border-radius: 0;
     }
 
-    dialog:not([data-context-dialog]) {
-      background-color: transparent;
-      border: none;
-      margin: auto;
-      outline: none;
-      overflow: visible;
-    }
-
-    dialog:not([data-context-dialog])::backdrop {
-      background-color: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(3px);
-    }
-
     bim-grid[floating]>bim-panel {
       border-radius: 1rem;
     }
+
+    .options-menu {
+      position: fixed;
+      min-width: unset;
+      top: 5px;
+      right: 5px;
+      max-height: calc(100vh - 10px);
+    }
+
+    .phone-menu-toggler {
+      visibility: hidden;
+    }
+
+    @media (max-width: 480px) {
+      .options-menu {
+        visibility: hidden;
+        bottom: 5px;
+        left: 5px;
+      }
+
+      .options-menu-visible {
+        visibility: visible;
+      }
+
+      .phone-menu-toggler {
+        visibility: visible;
+        position: fixed;
+        top: 5px;
+        right: 5px;
+      }
+    }
   </style>
   <script type="module" crossorigin src="../assets/bCFTopics.js"></script>
-  <link rel="modulepreload" crossorigin href="../assets/web-ifc-api-JuXSH2nk.js">
-  <link rel="modulepreload" crossorigin href="../assets/index-CqPyogbW.js">
+  <link rel="modulepreload" crossorigin href="../assets/web-ifc-api-r1ed24cU.js">
+  <link rel="modulepreload" crossorigin href="../assets/index-ByMLC5eT.js">
   <link rel="modulepreload" crossorigin href="../assets/_commonjsHelpers-Cpj98o6Y.js">
-  <link rel="modulepreload" crossorigin href="../assets/index-BICSFNrK.js">
-  <link rel="modulepreload" crossorigin href="../assets/index-M03DNf7F.js">
+  <link rel="modulepreload" crossorigin href="../assets/index-Kx2qtaRB.js">
+  <link rel="modulepreload" crossorigin href="../assets/index-DfH5t8ki.js">
+  <link rel="modulepreload" crossorigin href="../assets/simple-renderer-DnTOw3J9.js">
 </head>
 
 <body>

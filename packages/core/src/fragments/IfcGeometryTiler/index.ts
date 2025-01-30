@@ -1,8 +1,14 @@
 import * as WEBIFC from "web-ifc";
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
-import { Components, Disposable, Event, Component } from "../../core";
-import { isPointInFrontOfPlane, obbFromPoints } from "../../utils";
+import {
+  Components,
+  Disposable,
+  Event,
+  Component,
+  AsyncEvent,
+} from "../../core";
+import { obbFromPoints } from "../../utils";
 import { IfcStreamingSettings, StreamedGeometries, StreamedAsset } from "./src";
 import {
   SpatialStructure,
@@ -27,7 +33,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
    * Event triggered when geometry is streamed.
    * Contains the streamed geometry data and its buffer.
    */
-  readonly onGeometryStreamed = new Event<{
+  readonly onGeometryStreamed = new AsyncEvent<{
     buffer: Uint8Array;
     data: StreamedGeometries;
   }>();
@@ -36,19 +42,19 @@ export class IfcGeometryTiler extends Component implements Disposable {
    * Event triggered when assets are streamed.
    * Contains the streamed assets.
    */
-  readonly onAssetStreamed = new Event<StreamedAsset[]>();
+  readonly onAssetStreamed = new AsyncEvent<StreamedAsset[]>();
 
   /**
    * Event triggered to indicate the progress of the streaming process.
    * Contains the progress percentage.
    */
-  readonly onProgress = new Event<number>();
+  readonly onProgress = new AsyncEvent<number>();
 
   /**
    * Event triggered when the IFC file is loaded.
    * Contains the loaded IFC file data.
    */
-  readonly onIfcLoaded = new Event<Uint8Array>();
+  readonly onIfcLoaded = new AsyncEvent<Uint8Array>();
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
@@ -65,6 +71,10 @@ export class IfcGeometryTiler extends Component implements Disposable {
    * The WebIFC API instance used for IFC file processing.
    */
   webIfc = new WEBIFC.IfcAPI();
+
+  private _nextAvailableID = 0;
+
+  private _splittedGeometries = new Map<number, Set<number>>();
 
   private _spatialTree = new SpatialStructure();
 
@@ -167,6 +177,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
       this.webIfc.SetLogLevel(logLevel);
     }
     this.webIfc.OpenModel(data, this.settings.webIfc);
+    this._nextAvailableID = this.webIfc.GetMaxExpressID(0);
   }
 
   private async streamIfcFile(loadCallback: WEBIFC.ModelLoadCallback) {
@@ -177,9 +188,12 @@ export class IfcGeometryTiler extends Component implements Disposable {
       this.webIfc.SetLogLevel(logLevel);
     }
     this.webIfc.OpenModelFromCallback(loadCallback, this.settings.webIfc);
+    this._nextAvailableID = this.webIfc.GetMaxExpressID(0);
   }
 
   private async streamAllGeometries() {
+    console.log("Converting geometries to tiles...");
+
     const { minGeometrySize, minAssetsSize } = this.settings;
 
     // Precompute the level to which each item belongs
@@ -245,7 +259,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
         this.getMesh(this.webIfc, mesh, group);
       });
 
-      if (this._geometryCount > minGeometrySize) {
+      if (this._geometryCount > this.settings.minGeometrySize) {
         await this.streamGeometries();
       }
 
@@ -257,7 +271,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
       if (currentProgress > nextProgress) {
         nextProgress += 0.01;
         nextProgress = Math.max(nextProgress, currentProgress);
-        this.onProgress.trigger(Math.round(nextProgress * 100) / 100);
+        await this.onProgress.trigger(Math.round(nextProgress * 100) / 100);
       }
     }
 
@@ -277,15 +291,6 @@ export class IfcGeometryTiler extends Component implements Disposable {
       geometryID.set(id, index);
     }
 
-    // Delete assets that have no geometric representation
-    // const ids = group.data.keys();
-    // for (const id of ids) {
-    //   const [keys] = group.data.get(id)!;
-    //   if (!keys.length) {
-    //     group.data.delete(id);
-    //   }
-    // }
-
     SpatialIdsFinder.get(group, this.webIfc);
 
     const matrix = this.webIfc.GetCoordinationMatrix(0);
@@ -293,7 +298,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
     group.civilData = this._civil.read(this.webIfc);
 
     const buffer = this._groupSerializer.export(group);
-    this.onIfcLoaded.trigger(buffer);
+    await this.onIfcLoaded.trigger(buffer);
     group.dispose(true);
   }
 
@@ -327,44 +332,40 @@ export class IfcGeometryTiler extends Component implements Disposable {
       const geometryID = geometry.geometryExpressID;
 
       // Distinguish between opaque and transparent geometries
-      const factor = geometry.color.w === 1 ? 1 : -1;
+      const isOpaque = geometry.color.w === 1;
+      const factor = isOpaque ? 1 : -1;
       const transpGeometryID = geometryID * factor;
 
       if (!this._visitedGeometries.has(transpGeometryID)) {
-        if (!this._visitedGeometries.has(geometryID)) {
-          // This is the first time we see this geometry
-          this.getGeometry(webIfc, geometryID);
+        // This is the first time we see this geometry
+        this.getGeometry(webIfc, geometryID, isOpaque);
+      }
+
+      this.registerGeometryData(
+        group,
+        id,
+        geometry,
+        asset,
+        geometryID,
+        transpGeometryID,
+      );
+
+      // Also save splits, if any
+      const splits = this._splittedGeometries.get(geometryID);
+      if (splits) {
+        for (const split of splits) {
+          this.registerGeometryData(group, id, geometry, asset, split, split);
         }
-
-        // Save geometry for fragment generation
-        // separating transparent and opaque geometries
-        const index = this._visitedGeometries.size;
-        const uuid = THREE.MathUtils.generateUUID();
-        this._visitedGeometries.set(transpGeometryID, { uuid, index });
       }
-
-      const geometryData = this._visitedGeometries.get(transpGeometryID);
-      if (geometryData === undefined) {
-        throw new Error("Error getting geometry data for streaming!");
-      }
-      const data = group.data.get(id);
-      if (!data) {
-        throw new Error("Data not found!");
-      }
-
-      data[0].push(geometryData.index);
-
-      const { x, y, z, w } = geometry.color;
-      const color = [x, y, z, w];
-      const transformation = geometry.flatTransformation;
-      asset.geometries.push({ color, geometryID, transformation });
     }
 
     this._assets.push(asset);
   }
 
-  private getGeometry(webIfc: WEBIFC.IfcAPI, id: number) {
+  private getGeometry(webIfc: WEBIFC.IfcAPI, id: number, isOpaque: boolean) {
     const geometry = webIfc.GetGeometry(0, id);
+
+    // Get the full index, position and normal data
 
     const index = webIfc.GetIndexArray(
       geometry.GetIndexData(),
@@ -389,48 +390,109 @@ export class IfcGeometryTiler extends Component implements Disposable {
       normal[i / 2 + 2] = vertexData[i + 5];
     }
 
-    // const bbox = makeApproxBoundingBox(position, index);
-    const obb = obbFromPoints(position);
-    const boundingBox = new Float32Array(obb.transformation.elements);
+    // Take transparency into account
+    const factor = isOpaque ? 1 : -1;
 
-    // Simple hole test: see if all triangles are facing away the center
-    // Using the vertex normal because it's easier
-    // Geometries with holes are treated as transparent items
-    // in the visibility test for geometry streaming
-    // Not perfect, but it will work for most cases and all the times it fails
-    // are false positives, so it's always on the safety side
+    // Empty geometry
+    if (index.length === 0) {
+      // prettier-ignore
+      const boundingBox = new Float32Array([
+          0, 0, 0, 0,
+          0, 0, 0, 0,
+          0, 0, 0, 0,
+          0, 0, 0, 1
+      ]);
 
-    const centerArray = [obb.center.x, obb.center.y, obb.center.z];
+      this._geometries.set(id, {
+        position,
+        normal,
+        index,
+        boundingBox,
+        hasHoles: false,
+      });
 
-    let hasHoles = false;
-    for (let i = 0; i < position.length - 2; i += 3) {
-      const x = position[i];
-      const y = position[i + 1];
-      const z = position[i + 2];
+      const geomIndex = this._visitedGeometries.size;
+      const uuid = THREE.MathUtils.generateUUID();
 
-      const nx = normal[i];
-      const ny = normal[i + 1];
-      const nz = normal[i + 2];
-
-      const pos = [x, y, z];
-      const nor = [nx, ny, nz];
-      if (isPointInFrontOfPlane(centerArray, pos, nor)) {
-        hasHoles = true;
-        break;
-      }
+      const transpGeometryID = id * factor;
+      this._visitedGeometries.set(transpGeometryID, { uuid, index: geomIndex });
+      this._geometryCount++;
+      geometry.delete();
+      return;
     }
 
-    this._geometries.set(id, {
-      position,
-      normal,
-      index,
-      boundingBox,
-      hasHoles,
-    });
+    const maxTris = this.settings.maxTriangles || index.length / 3;
+    const maxIndexSize = maxTris * 3;
+
+    let firstSplit = true;
+
+    // Split geometries to normalize fragment size
+    for (let i = 0; i < index.length; i += maxIndexSize) {
+      const distanceToEnd = index.length - i;
+      const distance = Math.min(distanceToEnd, maxIndexSize);
+      const end = i + distance;
+
+      const splittedIndexArray = [] as number[];
+      const splittedPosArray = [] as number[];
+      const splittedNorArray = [] as number[];
+
+      // Now, let's generate a new sub-geometry
+      let indexCounter = 0;
+      for (let j = i; j < end; j++) {
+        splittedIndexArray.push(indexCounter++);
+
+        const previousIndex = index[j];
+        splittedPosArray.push(position[previousIndex * 3]);
+        splittedPosArray.push(position[previousIndex * 3 + 1]);
+        splittedPosArray.push(position[previousIndex * 3 + 2]);
+
+        splittedNorArray.push(normal[previousIndex * 3]);
+        splittedNorArray.push(normal[previousIndex * 3 + 1]);
+        splittedNorArray.push(normal[previousIndex * 3 + 2]);
+      }
+
+      const splittedIndex = new Uint32Array(splittedIndexArray);
+      const splittedPosition = new Float32Array(splittedPosArray);
+      const splittedNormal = new Float32Array(splittedNorArray);
+
+      // const bbox = makeApproxBoundingBox(position, index);
+      const obb = obbFromPoints(splittedPosition);
+      const boundingBox = new Float32Array(obb.transformation.elements);
+
+      // Deprecated, we don't need this anymore
+      const hasHoles = false;
+
+      // Get the ID for the geometry. If just 1 split, keep original ID.
+      // If more than 1 split, create extra IDs
+      const geometryID = firstSplit ? id : this._nextAvailableID++;
+
+      this._geometries.set(geometryID, {
+        position: splittedPosition,
+        normal: splittedNormal,
+        index: splittedIndex,
+        boundingBox,
+        hasHoles,
+      });
+
+      if (!firstSplit) {
+        if (!this._splittedGeometries.has(id)) {
+          this._splittedGeometries.set(id, new Set());
+        }
+        const splits = this._splittedGeometries.get(id) as Set<number>;
+        splits.add(geometryID);
+      }
+
+      // Register visited geometry, distinguishing between transparent and opaque
+
+      const geomIndex = this._visitedGeometries.size;
+      const uuid = THREE.MathUtils.generateUUID();
+      const transpGeometryID = geometryID * factor;
+      this._visitedGeometries.set(transpGeometryID, { uuid, index: geomIndex });
+      this._geometryCount++;
+      firstSplit = false;
+    }
 
     geometry.delete();
-
-    this._geometryCount++;
   }
 
   private async streamAssets() {
@@ -440,20 +502,58 @@ export class IfcGeometryTiler extends Component implements Disposable {
   }
 
   private async streamGeometries() {
-    let buffer = this._streamSerializer.export(this._geometries) as Uint8Array;
+    const exportMap: typeof this._geometries = new Map();
 
-    let data: StreamedGeometries = {};
-
-    for (const [id, { boundingBox, hasHoles }] of this._geometries) {
-      data[id] = { boundingBox, hasHoles };
+    // Split geometries to control the maximum size of fragment files
+    for (const [id, value] of this._geometries) {
+      exportMap.set(id, value);
+      if (exportMap.size > this.settings.minGeometrySize) {
+        await this.outputGeometries(exportMap);
+      }
     }
 
-    this.onGeometryStreamed.trigger({ data, buffer });
+    // Output remaining geometries
+    await this.outputGeometries(exportMap);
 
+    this._geometries.clear();
+    this._geometryCount = 0;
+  }
+
+  private async outputGeometries(exportMap: typeof this._geometries) {
+    let buffer = this._streamSerializer.export(exportMap) as Uint8Array;
+    let data: StreamedGeometries = {};
+    for (const [id, { boundingBox, hasHoles }] of exportMap) {
+      data[id] = { boundingBox, hasHoles };
+    }
+    await this.onGeometryStreamed.trigger({ data, buffer });
     // Force memory disposal of all created items
     data = null as any;
     buffer = null as any;
-    this._geometries.clear();
-    this._geometryCount = 0;
+    exportMap.clear();
+  }
+
+  private registerGeometryData(
+    group: FRAGS.FragmentsGroup,
+    itemID: number,
+    geometry: WEBIFC.PlacedGeometry,
+    asset: StreamedAsset,
+    geometryID: number,
+    transpGeometryID: number,
+  ) {
+    const geometryData = this._visitedGeometries.get(transpGeometryID);
+    if (geometryData === undefined) {
+      throw new Error("Error getting geometry data for streaming!");
+    }
+    const data = group.data.get(itemID);
+    if (!data) {
+      throw new Error("Data not found!");
+    }
+
+    data[0].push(geometryData.index);
+
+    const { x, y, z, w } = geometry.color;
+    const color = [x, y, z, w];
+    const transformation = geometry.flatTransformation;
+    asset.geometries.push({ color, geometryID, transformation });
   }
 }

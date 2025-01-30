@@ -5,6 +5,14 @@ import { IfcCategoryMap, IfcPropertiesUtils } from "../../ifc";
 import { IfcRelationsIndexer } from "../../ifc/IfcRelationsIndexer";
 import { FragmentsManager } from "../FragmentsManager";
 
+// TODO: SMART GROUPS Static vs dynamic classifications
+// static: has fragmentIdMap
+// dynamic: use the finder to find the result from a querygroup
+// for dynamic, we just need to add a queryGroup as shown below
+
+// TODO: Make the groups a class to have a getter that gets the combined FragmentIdMap
+// combined from the cherry p<icked elements and the elements found in the group
+
 /**
  * Interface representing a classification system. The classification is organized by system and class name, and each class contains a map of fragment IDs with extra information.
  */
@@ -18,8 +26,19 @@ export interface Classification {
      * A class within the system.
      * The key is the class name, and the value is an object containing a map of fragment IDs with extra information.
      */
-    [className: string]: {
+    [groupName: string]: {
       map: FRAGS.FragmentIdMap;
+      name: string;
+      id: number | null;
+      // rules?: QueryGroup;
+    };
+  };
+}
+
+interface ExportedClassification {
+  [system: string]: {
+    [groupName: string]: {
+      map: { [name: string]: number[] };
       name: string;
       id: number | null;
     };
@@ -356,7 +375,11 @@ export class Classifier extends Component implements Disposable {
    */
   async bySpatialStructure(
     model: FRAGS.FragmentsGroup,
-    config: { useProperties?: boolean; isolate?: Set<number> } = {},
+    config: {
+      useProperties?: boolean;
+      isolate?: Set<number>;
+      systemName?: string;
+    } = {},
   ) {
     const indexer = this.components.get(IfcRelationsIndexer);
     const modelRelations = indexer.relationMaps[model.uuid];
@@ -365,7 +388,7 @@ export class Classifier extends Component implements Disposable {
         `Classifier: model relations of ${model.name || model.uuid} have to exists to group by spatial structure.`,
       );
     }
-    const systemName = "spatialStructures";
+    const systemName = config.systemName ?? "spatialStructures";
 
     // If useProperties is undefined, use properties by default
     const noProps = config.useProperties === undefined;
@@ -482,6 +505,50 @@ export class Classifier extends Component implements Disposable {
       if (!found) continue;
       const ids = items[fragID];
       found.resetColor(ids);
+    }
+  }
+
+  /**
+   * Exports the computed classification to persists them and import them back
+   * later for faster loading.
+   */
+  export() {
+    const exported: ExportedClassification = {};
+
+    for (const systemName in this.list) {
+      exported[systemName] = {};
+      const system = this.list[systemName];
+      for (const groupName in system) {
+        const group = system[groupName];
+        exported[systemName][groupName] = {
+          map: FRAGS.FragmentUtils.export(group.map),
+          name: group.name,
+          id: group.id,
+        };
+      }
+    }
+
+    return exported;
+  }
+
+  /**
+   * Imports a classification previously exported with .export().
+   * @param data the serialized classification to import.
+   */
+  import(data: ExportedClassification) {
+    for (const systemName in data) {
+      if (!this.list[systemName]) {
+        this.list[systemName] = {};
+      }
+      const system = data[systemName];
+      for (const groupName in system) {
+        const group = system[groupName];
+        this.list[systemName][groupName] = {
+          map: FRAGS.FragmentUtils.import(group.map),
+          name: group.name,
+          id: group.id,
+        };
+      }
     }
   }
 
