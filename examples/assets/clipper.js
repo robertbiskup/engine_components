@@ -1,4 +1,4 @@
-import{B as r,M as m,a as d}from"./web-ifc-api-JuXSH2nk.js";import{S as p}from"./stats.min-GTpOrGrX.js";import{d as u,R as s,m as c}from"./index-CqPyogbW.js";import{o as h,a as g,M as k,v as w,N as v,t as y,l as M}from"./index-DtdmE_hK.js";import"./_commonjsHelpers-Cpj98o6Y.js";const b=document.getElementById("container"),a=new h,f=a.get(g),e=f.create();e.scene=new k(a);e.renderer=new w(a,b);e.camera=new v(a);a.init();e.camera.controls.setLookAt(10,10,10,0,0,0);e.scene.setup();e.scene.three.background=null;const x=new r(3,3,3),$=new m({color:"#6528D7"}),o=new d(x,$);o.position.set(0,1.5,0);e.scene.three.add(o);e.meshes.add(o);const P=a.get(y);P.get(e);const t=a.get(M);t.enabled=!0;b.ondblclick=()=>{t.enabled&&t.create(e)};window.onkeydown=n=>{(n.code==="Delete"||n.code==="Backspace")&&t.enabled&&t.delete(e)};const l=new p;l.showPanel(2);document.body.append(l.dom);l.dom.style.left="0px";l.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>l.begin());e.renderer.onAfterUpdate.add(()=>l.end());u.init();const i=s.create(()=>c`
+import{B as b,M as m,a as p,C as d}from"./web-ifc-api-r1ed24cU.js";import{S as u}from"./stats.min-GTpOrGrX.js";import{T as h,L as s,m as c}from"./index-ByMLC5eT.js";import{C as g,W as f,S as k,d as w,a as y,R as C,e as v}from"./index-B7zJT0sV.js";import"./_commonjsHelpers-Cpj98o6Y.js";const r=document.getElementById("container"),t=new g,M=t.get(f),e=M.create();e.scene=new k(t);e.renderer=new w(t,r);e.camera=new y(t);t.init();e.camera.controls.setLookAt(10,10,10,0,0,0);e.scene.setup();e.scene.three.background=null;const x=new b(3,3,3),S=new m({color:"#6528D7"}),a=new p(x,S);a.position.set(0,1.5,0);e.scene.three.add(a);e.meshes.add(a);const $=t.get(C);$.get(e);const o=t.get(v);o.enabled=!0;r.ondblclick=()=>{o.enabled&&o.create(e)};window.onkeydown=n=>{(n.code==="Delete"||n.code==="Backspace")&&o.enabled&&o.delete(e)};const l=new u;l.showPanel(2);document.body.append(l.dom);l.dom.style.left="0px";l.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>l.begin());e.renderer.onAfterUpdate.add(()=>l.end());h.init();const i=s.create(()=>c`
     <bim-panel label="Clipper Tutorial" class="options-menu">
           <bim-panel-section collapsed label="Commands">
       
@@ -10,43 +10,43 @@ import{B as r,M as m,a as d}from"./web-ifc-api-JuXSH2nk.js";import{S as p}from".
       <bim-panel-section collapsed label="Others"">
           
         <bim-checkbox label="Clipper enabled" checked 
-          @change="${({target:n})=>{t.enabled=n.value}}">
+          @change="${({target:n})=>{o.config.enabled=n.value}}">
         </bim-checkbox>
         
         <bim-checkbox label="Clipper visible" checked 
-          @change="${({target:n})=>{t.visible=n.value}}">
+          @change="${({target:n})=>{o.config.visible=n.value}}">
         </bim-checkbox>
       
         <bim-color-input 
           label="Planes Color" color="#202932" 
-          @input="${({target:n})=>{t.material.color.set(n.color)}}">
+          @input="${({target:n})=>{o.config.color=new d(n.color)}}">
         </bim-color-input>
         
         <bim-number-input 
           slider step="0.01" label="Planes opacity" value="0.2" min="0.1" max="1"
-          @change="${({target:n})=>{t.material.opacity=n.value}}">
+          @change="${({target:n})=>{o.config.opacity=n.value}}">
         </bim-number-input>
         
         <bim-number-input 
           slider step="0.1" label="Planes size" value="5" min="2" max="10"
-          @change="${({target:n})=>{t.size=n.value}}">
+          @change="${({target:n})=>{o.config.size=n.value}}">
         </bim-number-input>
         
         <bim-button 
           label="Delete all" 
-          @click="${()=>{t.deleteAll()}}">  
+          @click="${()=>{o.deleteAll()}}">  
         </bim-button>        
         
         <bim-button 
           label="Rotate cube" 
-          @click="${()=>{o.rotation.x=2*Math.PI*Math.random(),o.rotation.y=2*Math.PI*Math.random(),o.rotation.z=2*Math.PI*Math.random()}}">  
+          @click="${()=>{a.rotation.x=2*Math.PI*Math.random(),a.rotation.y=2*Math.PI*Math.random(),a.rotation.z=2*Math.PI*Math.random()}}">  
         </bim-button>
        
         
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(i);const C=s.create(()=>c`
+    `);document.body.append(i);const P=s.create(()=>c`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{i.classList.contains("options-menu-visible")?i.classList.remove("options-menu-visible"):i.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(C);
+    `);document.body.append(P);

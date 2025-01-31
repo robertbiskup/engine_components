@@ -26,6 +26,8 @@ export class LengthMeasurement
   /** {@link OBC.Updateable.onAfterUpdate} */
   readonly onAfterUpdate = new OBC.Event<LengthMeasurement>();
 
+  readonly onCleaned = new OBC.Event<null>();
+
   /** The minimum distance to force the dimension cursor to a vertex. */
   snapDistance = 0.25;
 
@@ -167,6 +169,7 @@ export class LengthMeasurement
     dimension.endPoint = p2;
     dimension.createBoundingBox();
     this.list.push(dimension);
+    return dimension;
   }
 
   /** {@link OBC.Createable.delete} */
@@ -216,6 +219,7 @@ export class LengthMeasurement
       dim.dispose();
     }
     this.list = [];
+    this.onCleaned.trigger(null);
   }
 
   /** {@link OBC.Createable.cancelCreation} */
@@ -303,15 +307,24 @@ export class LengthMeasurement
     if (!viewerContainer) return;
 
     viewerContainer.removeEventListener("pointermove", this.onMouseMove);
+    window.removeEventListener("keydown", this.onKeydown);
 
     if (active) {
       viewerContainer.addEventListener("pointermove", this.onMouseMove);
+      window.addEventListener("keydown", this.onKeydown);
     }
   }
 
   private onMouseMove = () => {
     if (this.world) {
       this._vertexPicker.get(this.world);
+    }
+  };
+
+  private onKeydown = (e: KeyboardEvent) => {
+    if (!this.enabled) return;
+    if (e.key === "Escape") {
+      this.cancelCreation();
     }
   };
 }

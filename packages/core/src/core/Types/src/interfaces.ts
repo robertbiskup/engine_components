@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import CameraControls from "camera-controls";
 import { Event } from "./event";
+import { EventManager } from "./event-manager";
 
 /**
  * Whether this component has to be manually destroyed once you are done with it to prevent [memory leaks](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects). This also ensures that the DOM events created by that component will be cleaned up.
@@ -100,18 +101,17 @@ export interface Createable {
 /**
  * Whether this component supports to be configured.
  */
-export interface Configurable<T extends Record<string, any>> {
+export interface Configurable<T, U> {
   /** Wether this components has been already configured. */
   isSetup: boolean;
 
-  /** Use the provided configuration to setup the tool. */
-  setup: (config?: Partial<T>) => void | Promise<void>;
+  /** Use the provided configuration to set up the tool. */
+  setup: (config?: Partial<U>) => void | Promise<void>;
 
   /** Fired after successfully calling {@link Configurable.setup()}  */
   readonly onSetup: Event<any>;
 
-  /** Object holding the tool configuration. Is not meant to be edited directly, if you need
-   * to make changes to this object, use {@link Configurable.setup()} just after the tool is instantiated.
+  /** Object holding the tool configuration. You can edit this directly to change the object.
    */
   config: Required<T>;
 }
@@ -125,4 +125,14 @@ export interface CameraControllable {
    * This instance is used to manipulate the camera.
    */
   controls: CameraControls;
+}
+
+/**
+ * Whether it has events or not.
+ */
+export interface Eventable {
+  /**
+   * The object in charge of managing all the events.
+   */
+  eventManager: EventManager;
 }

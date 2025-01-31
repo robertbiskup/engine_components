@@ -8,32 +8,35 @@ import {
   Event,
   World,
   DataMap,
-} from "../../core/Types";
+} from "../../core";
+
 import {
   BCFTopic,
-  BCFTopicsConfig,
   BCFVersion,
   Topic,
   extensionsImporter,
+  BCFTopicsConfigManager,
+  BCFTopicsConfig,
+  Comment,
 } from "./src";
+
 import {
   BCFViewpoint,
   Viewpoint,
   ViewpointCamera,
   Viewpoints,
 } from "../../core/Viewpoints";
-import { Comment } from "./src/Comment";
+
 import { Clipper } from "../../core/Clipper";
 
 // TODO: Extract import/export logic in its own class for better maintenance.
 
 /**
- * BCFTopics manages Building Collaboration Format (BCF) data the engine.
- * It provides functionality for importing, exporting, and manipulating BCF data.
+ * BCFTopics manages Building Collaboration Format (BCF) data the engine. It provides functionality for importing, exporting, and manipulating BCF data.
  */
 export class BCFTopics
   extends Component
-  implements Disposable, Configurable<BCFTopicsConfig>
+  implements Disposable, Configurable<BCFTopicsConfigManager, BCFTopicsConfig>
 {
   static uuid = "de977976-e4f6-4e4f-a01a-204727839802" as const;
   enabled = false;
@@ -52,7 +55,7 @@ export class BCFTopics
     trimValues: true,
   });
 
-  config: Required<BCFTopicsConfig> = {
+  protected _defaultConfig: Required<BCFTopicsConfig> = {
     author: "jhon.doe@example.com",
     version: "2.1",
     types: new Set([
@@ -77,13 +80,42 @@ export class BCFTopics
     ignoreIncompleteTopicsOnImport: false,
   };
 
+  config = new BCFTopicsConfigManager(
+    this,
+    this.components,
+    "BCF Topics",
+    BCFTopics.uuid,
+  );
+
   readonly list = new DataMap<string, Topic>();
 
   readonly onSetup = new Event();
   isSetup = false;
   setup(config?: Partial<BCFTopicsConfig>) {
     if (this.isSetup) return;
-    this.config = { ...this.config, ...config };
+
+    const fullConfig = { ...this._defaultConfig, ...config };
+
+    this.config.version = fullConfig.version;
+    this.config.author = fullConfig.author;
+    this.config.types = fullConfig.types;
+    this.config.statuses = fullConfig.statuses;
+    this.config.priorities = fullConfig.priorities;
+    this.config.labels = fullConfig.labels;
+    this.config.stages = fullConfig.stages;
+    this.config.users = fullConfig.users;
+    this.config.includeSelectionTag = fullConfig.includeSelectionTag;
+    this.config.updateExtensionsOnImport = fullConfig.updateExtensionsOnImport;
+    this.config.strict = fullConfig.strict;
+    this.config.includeAllExtensionsOnExport =
+      fullConfig.includeAllExtensionsOnExport;
+
+    this.config.fallbackVersionOnImport =
+      fullConfig.fallbackVersionOnImport || "";
+
+    this.config.ignoreIncompleteTopicsOnImport =
+      fullConfig.ignoreIncompleteTopicsOnImport;
+
     this.isSetup = true;
     this.enabled = true;
     this.onSetup.trigger();
@@ -103,8 +135,9 @@ export class BCFTopics
     if (data) {
       topic.guid = data.guid ?? topic.guid;
       topic.set(data);
+    } else {
+      this.list.set(topic.guid, topic);
     }
-    this.list.set(topic.guid, topic);
     return topic;
   }
 
@@ -256,7 +289,7 @@ export class BCFTopics
     const image = await fetch(
       "https://thatopen.github.io/engine_components/resources/favicon.ico",
     );
-    const imgBlob = await image.blob();
+    const imgBlob = await image.arrayBuffer();
     const viewpoints = this.components.get(Viewpoints);
     for (const topic of topics) {
       const topicFolder = zip.folder(topic.guid) as JSZip;
