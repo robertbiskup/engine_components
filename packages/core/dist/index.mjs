@@ -6293,7 +6293,7 @@ const _Components = class _Components {
 /**
  * The version of the @thatopen/components library.
  */
-__publicField(_Components, "release", "2.4.3");
+__publicField(_Components, "release", "2.4.4");
 let Components = _Components;
 class SimpleWorld extends Base {
   constructor() {
@@ -27224,10 +27224,10 @@ class IDSFacet {
         let minPass = true;
         let maxPass = true;
         if (min !== void 0) {
-          minPass = minInclusive ? value <= min : value < min;
+          minPass = minInclusive ? value >= min : value > min;
         }
         if (max !== void 0) {
-          maxPass = maxInclusive ? value >= max : value > max;
+          maxPass = maxInclusive ? value <= max : value < max;
         }
         pass = minPass && maxPass;
       }
@@ -27952,16 +27952,15 @@ class IDSProperty extends IDSFacet {
       this.testResult.push(result2);
       const sets = await this.getPsets(model, expressID);
       const matchingSets = sets.filter((set) => {
-        var _a2;
         const result3 = this.evalRequirement(
-          ((_a2 = set.Name) == null ? void 0 : _a2.value) ?? null,
+          set.Name ?? null,
           this.propertySet,
           "PropertySet"
         );
         if (!result3)
           return false;
         checks.push({
-          currentValue: set.Name.value,
+          currentValue: set.Name,
           parameter: "PropertySet",
           pass: true,
           requiredValue: this.propertySet.parameter
@@ -27978,8 +27977,7 @@ class IDSProperty extends IDSFacet {
         continue;
       }
       for (const set of matchingSets) {
-        const itemsAttrName = this.getItemsAttrName(set.type);
-        if (!itemsAttrName) {
+        if (!("Properties" in set)) {
           checks.push({
             currentValue: null,
             parameter: "BaseName",
@@ -27988,7 +27986,7 @@ class IDSProperty extends IDSFacet {
           });
           continue;
         }
-        const items = set[itemsAttrName];
+        const items = set.Properties;
         const matchingItems = items.filter((item) => {
           var _a2;
           if (this._unsupportedTypes.includes(item.type)) {
@@ -28043,18 +28041,22 @@ class IDSProperty extends IDSFacet {
       (name) => name.endsWith("Value") || name.endsWith("Values")
     );
   }
-  async getPsetProps(model, attrs, propsListName) {
-    const attrsClone = structuredClone(attrs);
+  async simplifyPset(model, attrs, propsListName) {
+    var _a;
     const props = [];
-    const list = attrsClone[propsListName];
+    const list = attrs[propsListName];
     if (!list)
-      return props;
+      return attrs;
     for (const { value } of list) {
       const propAttrs = await model.getProperties(value);
       if (propAttrs)
         props.push(propAttrs);
     }
-    attrsClone[propsListName] = props;
+    const attrsClone = {
+      Name: (_a = attrs.Name) == null ? void 0 : _a.value,
+      Properties: props,
+      type: attrs.type
+    };
     return attrsClone;
   }
   async getTypePsets(model, expressID) {
@@ -28072,13 +28074,14 @@ class IDSProperty extends IDSFacet {
       if (!(psetAttrs && "HasProperties" in psetAttrs && Array.isArray(psetAttrs.HasProperties))) {
         continue;
       }
-      const pset = await this.getPsetProps(model, psetAttrs, "HasProperties");
+      const pset = await this.simplifyPset(model, psetAttrs, "HasProperties");
       sets.push(pset);
     }
     return sets;
   }
   async getPsets(model, expressID) {
-    const sets = await this.getTypePsets(model, expressID);
+    var _a;
+    const typePsets = await this.getTypePsets(model, expressID);
     const indexer = this.components.get(IfcRelationsIndexer);
     const definitions = indexer.getEntityRelations(
       model,
@@ -28086,7 +28089,8 @@ class IDSProperty extends IDSFacet {
       "IsDefinedBy"
     );
     if (!definitions)
-      return sets;
+      return typePsets;
+    const sets = [];
     for (const definitionID of definitions) {
       const attrs = await model.getProperties(definitionID);
       if (!attrs)
@@ -28094,8 +28098,25 @@ class IDSProperty extends IDSFacet {
       const propsListName = this.getItemsAttrName(attrs.type);
       if (!propsListName)
         continue;
-      const pset = await this.getPsetProps(model, attrs, propsListName);
-      sets.push(pset);
+      const occurencePset = await this.simplifyPset(
+        model,
+        attrs,
+        propsListName
+      );
+      const typePset = typePsets.find(
+        ({ Name }) => Name === occurencePset.Name
+      );
+      if (typePset) {
+        for (const prop of typePset.Properties) {
+          const name = (_a = prop.Name) == null ? void 0 : _a.value;
+          const existingProp = occurencePset.Properties.find(
+            ({ Name }) => Name.value === name
+          );
+          if (!existingProp)
+            occurencePset.Properties.push(prop);
+        }
+      }
+      sets.push(occurencePset);
     }
     return sets;
   }

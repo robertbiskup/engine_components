@@ -7,7 +7,7 @@ export declare class Components implements Disposable {
     /**
      * The version of the @thatopen/components library.
      */
-    static readonly release = "2.4.3";
+    static readonly release = "2.4.4";
     /** {@link Disposable.onDisposed} */
     readonly onDisposed: Event<void>;
     /**
@@ -92,6 +92,48 @@ export declare class Components implements Disposable {
     private update;
     private static setupBVH;
 }
+import { Component, Disposable, World, Event } from "../Types";
+import { SimpleRaycaster } from "./src";
+import { Components } from "../Components";
+/**
+ * A component that manages a raycaster for each world and automatically disposes it when its corresponding world is disposed. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/Raycasters). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/Raycasters).
+ */
+export declare class Raycasters extends Component implements Disposable {
+    /**
+     * A unique identifier for the component.
+     * This UUID is used to register the component within the Components system.
+     */
+    static readonly uuid: "d5d8bdf0-db25-4952-b951-b643af207ace";
+    /** {@link Component.enabled} */
+    enabled: boolean;
+    /**
+     * A Map that stores raycasters for each world.
+     * The key is the world's UUID, and the value is the corresponding SimpleRaycaster instance.
+     */
+    list: Map<string, SimpleRaycaster>;
+    /** {@link Disposable.onDisposed} */
+    onDisposed: Event<unknown>;
+    constructor(components: Components);
+    /**
+     * Retrieves a SimpleRaycaster instance for the given world.
+     * If a SimpleRaycaster instance already exists for the world, it will be returned.
+     * Otherwise, a new SimpleRaycaster instance will be created and added to the list.
+     *
+     * @param world - The world for which to retrieve or create a SimpleRaycaster instance.
+     * @returns The SimpleRaycaster instance for the given world.
+     */
+    get(world: World): SimpleRaycaster;
+    /**
+     * Deletes the SimpleRaycaster instance associated with the given world.
+     * If a SimpleRaycaster instance exists for the given world, it will be disposed and removed from the list.
+     *
+     * @param world - The world for which to delete the SimpleRaycaster instance.
+     * @returns {void}
+     */
+    delete(world: World): void;
+    /** {@link Disposable.dispose} */
+    dispose(): void;
+}
 import * as THREE from "three";
 import { Components } from "../Components";
 import { Component } from "../Types";
@@ -137,47 +179,58 @@ export declare class Disposer extends Component {
     private disposeChildren;
     private static disposeMaterial;
 }
-import { Component, Disposable, World, Event } from "../Types";
-import { SimpleRaycaster } from "./src";
+import { Component, Disposable, Updateable, World, Event, BaseScene, BaseCamera, BaseRenderer, DataMap } from "../Types";
 import { Components } from "../Components";
+import { SimpleWorld } from "./src";
 /**
- * A component that manages a raycaster for each world and automatically disposes it when its corresponding world is disposed. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/Raycasters). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/Raycasters).
+ * A class representing a collection of worlds within a game engine. It manages the creation, deletion, and update of worlds. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/Worlds). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/Worlds).
  */
-export declare class Raycasters extends Component implements Disposable {
+export declare class Worlds extends Component implements Updateable, Disposable {
     /**
      * A unique identifier for the component.
      * This UUID is used to register the component within the Components system.
      */
-    static readonly uuid: "d5d8bdf0-db25-4952-b951-b643af207ace";
+    static readonly uuid: "fdb61dc4-2ec1-4966-b83d-54ea795fad4a";
+    /** {@link Updateable.onAfterUpdate} */
+    readonly onAfterUpdate: Event<unknown>;
+    /** {@link Updateable.onBeforeUpdate} */
+    readonly onBeforeUpdate: Event<unknown>;
+    /** {@link Disposable.onDisposed} */
+    readonly onDisposed: Event<unknown>;
+    /**
+     * A collection of worlds managed by this component.
+     * The key is the unique identifier (UUID) of the world, and the value is the World instance.
+     */
+    list: DataMap<string, World>;
     /** {@link Component.enabled} */
     enabled: boolean;
-    /**
-     * A Map that stores raycasters for each world.
-     * The key is the world's UUID, and the value is the corresponding SimpleRaycaster instance.
-     */
-    list: Map<string, SimpleRaycaster>;
-    /** {@link Disposable.onDisposed} */
-    onDisposed: Event<unknown>;
     constructor(components: Components);
     /**
-     * Retrieves a SimpleRaycaster instance for the given world.
-     * If a SimpleRaycaster instance already exists for the world, it will be returned.
-     * Otherwise, a new SimpleRaycaster instance will be created and added to the list.
+     * Creates a new instance of a SimpleWorld and adds it to the list of worlds.
      *
-     * @param world - The world for which to retrieve or create a SimpleRaycaster instance.
-     * @returns The SimpleRaycaster instance for the given world.
+     * @template T - The type of the scene, extending from BaseScene. Defaults to BaseScene.
+     * @template U - The type of the camera, extending from BaseCamera. Defaults to BaseCamera.
+     * @template S - The type of the renderer, extending from BaseRenderer. Defaults to BaseRenderer.
+     *
+     * @throws {Error} - Throws an error if a world with the same UUID already exists in the list.
      */
-    get(world: World): SimpleRaycaster;
+    create<T extends BaseScene = BaseScene, U extends BaseCamera = BaseCamera, S extends BaseRenderer = BaseRenderer>(): SimpleWorld<T, U, S>;
     /**
-     * Deletes the SimpleRaycaster instance associated with the given world.
-     * If a SimpleRaycaster instance exists for the given world, it will be disposed and removed from the list.
+     * Deletes a world from the list of worlds.
      *
-     * @param world - The world for which to delete the SimpleRaycaster instance.
-     * @returns {void}
+     * @param {World} world - The world to be deleted.
+     *
+     * @throws {Error} - Throws an error if the provided world is not found in the list.
      */
     delete(world: World): void;
-    /** {@link Disposable.dispose} */
+    /**
+     * Disposes of the Worlds component and all its managed worlds.
+     * This method sets the enabled flag to false, disposes of all worlds, clears the list,
+     * and triggers the onDisposed event.
+     */
     dispose(): void;
+    /** {@link Updateable.update} */
+    update(delta?: number): void | Promise<void>;
 }
 import { SimpleScene, SimpleSceneConfig, SimpleSceneConfigManager } from "../Worlds";
 import { DistanceRenderer } from "./src";
@@ -236,58 +289,50 @@ export declare class ShadowedScene extends SimpleScene implements Disposable, Co
     updateShadows(): Promise<void>;
     private recomputeShadows;
 }
-import { Component, Disposable, Updateable, World, Event, BaseScene, BaseCamera, BaseRenderer, DataMap } from "../Types";
+import { Component, Disposable, World, Event } from "../Types";
+import { SimpleGrid } from "./src";
 import { Components } from "../Components";
-import { SimpleWorld } from "./src";
 /**
- * A class representing a collection of worlds within a game engine. It manages the creation, deletion, and update of worlds. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/Worlds). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/Worlds).
+ * A component that manages grid instances. Each grid is associated with a unique world. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/Grids). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/Grids).
  */
-export declare class Worlds extends Component implements Updateable, Disposable {
+export declare class Grids extends Component implements Disposable {
     /**
      * A unique identifier for the component.
      * This UUID is used to register the component within the Components system.
      */
-    static readonly uuid: "fdb61dc4-2ec1-4966-b83d-54ea795fad4a";
-    /** {@link Updateable.onAfterUpdate} */
-    readonly onAfterUpdate: Event<unknown>;
-    /** {@link Updateable.onBeforeUpdate} */
-    readonly onBeforeUpdate: Event<unknown>;
+    static readonly uuid: "d1e814d5-b81c-4452-87a2-f039375e0489";
+    /**
+     * A map of world UUIDs to their corresponding grid instances.
+     */
+    list: Map<string, SimpleGrid>;
     /** {@link Disposable.onDisposed} */
     readonly onDisposed: Event<unknown>;
-    /**
-     * A collection of worlds managed by this component.
-     * The key is the unique identifier (UUID) of the world, and the value is the World instance.
-     */
-    list: DataMap<string, World>;
     /** {@link Component.enabled} */
     enabled: boolean;
     constructor(components: Components);
     /**
-     * Creates a new instance of a SimpleWorld and adds it to the list of worlds.
+     * Creates a new grid for the given world.
+     * Throws an error if a grid already exists for the world.
      *
-     * @template T - The type of the scene, extending from BaseScene. Defaults to BaseScene.
-     * @template U - The type of the camera, extending from BaseCamera. Defaults to BaseCamera.
-     * @template S - The type of the renderer, extending from BaseRenderer. Defaults to BaseRenderer.
+     * @param world - The world to create the grid for.
+     * @returns The newly created grid.
      *
-     * @throws {Error} - Throws an error if a world with the same UUID already exists in the list.
+     * @throws Will throw an error if a grid already exists for the given world.
      */
-    create<T extends BaseScene = BaseScene, U extends BaseCamera = BaseCamera, S extends BaseRenderer = BaseRenderer>(): SimpleWorld<T, U, S>;
+    create(world: World): SimpleGrid;
     /**
-     * Deletes a world from the list of worlds.
+     * Deletes the grid associated with the given world.
+     * If a grid does not exist for the given world, this method does nothing.
      *
-     * @param {World} world - The world to be deleted.
+     * @param world - The world for which to delete the grid.
      *
-     * @throws {Error} - Throws an error if the provided world is not found in the list.
+     * @remarks
+     * This method will dispose of the grid and remove it from the internal list.
+     * If the world is disposed before calling this method, the grid will be automatically deleted.
      */
     delete(world: World): void;
-    /**
-     * Disposes of the Worlds component and all its managed worlds.
-     * This method sets the enabled flag to false, disposes of all worlds, clears the list,
-     * and triggers the onDisposed event.
-     */
+    /** {@link Disposable.dispose} */
     dispose(): void;
-    /** {@link Updateable.update} */
-    update(delta?: number): void | Promise<void>;
 }
 import * as THREE from "three";
 import { Component, Configurable, Createable, Disposable, Event, Hideable, World } from "../Types";
@@ -430,51 +475,6 @@ export declare class Clipper extends Component implements Createable, Disposable
     private _onStartDragging;
     private _onEndDragging;
 }
-import { Component, Disposable, World, Event } from "../Types";
-import { SimpleGrid } from "./src";
-import { Components } from "../Components";
-/**
- * A component that manages grid instances. Each grid is associated with a unique world. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/Grids). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/Grids).
- */
-export declare class Grids extends Component implements Disposable {
-    /**
-     * A unique identifier for the component.
-     * This UUID is used to register the component within the Components system.
-     */
-    static readonly uuid: "d1e814d5-b81c-4452-87a2-f039375e0489";
-    /**
-     * A map of world UUIDs to their corresponding grid instances.
-     */
-    list: Map<string, SimpleGrid>;
-    /** {@link Disposable.onDisposed} */
-    readonly onDisposed: Event<unknown>;
-    /** {@link Component.enabled} */
-    enabled: boolean;
-    constructor(components: Components);
-    /**
-     * Creates a new grid for the given world.
-     * Throws an error if a grid already exists for the world.
-     *
-     * @param world - The world to create the grid for.
-     * @returns The newly created grid.
-     *
-     * @throws Will throw an error if a grid already exists for the given world.
-     */
-    create(world: World): SimpleGrid;
-    /**
-     * Deletes the grid associated with the given world.
-     * If a grid does not exist for the given world, this method does nothing.
-     *
-     * @param world - The world for which to delete the grid.
-     *
-     * @remarks
-     * This method will dispose of the grid and remove it from the internal list.
-     * If the world is disposed before calling this method, the grid will be automatically deleted.
-     */
-    delete(world: World): void;
-    /** {@link Disposable.dispose} */
-    dispose(): void;
-}
 import * as THREE from "three";
 import { Components } from "../Components";
 import { MeshCullerRenderer } from "./src";
@@ -579,63 +579,6 @@ export declare class MiniMaps extends Component implements Updateable, Disposabl
     /** {@link Updateable.update} */
     update(): void;
 }
-import { World, Component, Disposable, Event, DataMap, Configurable } from "../Types";
-import { Components } from "../Components";
-import { BCFViewpoint, Viewpoint } from "./src";
-import { ViewpointsConfigManager, ViewpointsConfig } from "./src/viewpoints-config";
-export declare class Viewpoints extends Component implements Disposable, Configurable<ViewpointsConfigManager, ViewpointsConfig> {
-    static readonly uuid: "ee867824-a796-408d-8aa0-4e5962a83c66";
-    enabled: boolean;
-    /**
-     * A DataMap that stores Viewpoint instances, indexed by their unique identifiers (guid).
-     * This map is used to manage and retrieve Viewpoint instances within the Viewpoints component.
-     */
-    readonly list: DataMap<string, Viewpoint>;
-    /**
-     * Creates a new Viewpoint instance and adds it to the list.
-     *
-     * @param world - The world in which the Viewpoint will be created.
-     * @param data - Optional partial data for the Viewpoint. If not provided, default data will be used.
-     *
-     * @returns The newly created Viewpoint instance.
-     */
-    create(world: World, data?: Partial<BCFViewpoint>): Viewpoint;
-    constructor(components: Components);
-    isSetup: boolean;
-    setup(): void;
-    onSetup: Event<unknown>;
-    config: ViewpointsConfigManager;
-    /** {@link Disposable.onDisposed} */
-    readonly onDisposed: Event<unknown>;
-    /**
-     * Disposes of the Viewpoints component and its associated resources.
-     *
-     * This method is responsible for cleaning up any resources held by the Viewpoints component,
-     * such as disposing of the DataMap of Viewpoint instances and triggering and resetting the
-     * onDisposed event.
-     */
-    dispose(): void;
-}
-import { Component, DataMap } from "../Types";
-import { Components } from "../Components";
-import { Configurator } from "./src";
-/**
- * A tool to manage all the configuration from the app centrally.
- */
-export declare class ConfigManager extends Component {
-    /**
-     * The list of all configurations of this app.
-     */
-    list: DataMap<string, Configurator<any, any>>;
-    /** {@link Component.enabled} */
-    enabled: boolean;
-    /**
-     * A unique identifier for the component.
-     * This UUID is used to register the component within the Components system.
-     */
-    static readonly uuid: "b8c764e0-6b24-4e77-9a32-35fa728ee5b4";
-    constructor(components: Components);
-}
 import * as THREE from "three";
 import { Components } from "../Components";
 import { SimpleCamera } from "..";
@@ -699,6 +642,643 @@ export declare class OrthoPerspectiveCamera extends SimpleCamera {
     private enableUserInput;
     private newOrthoCamera;
     private setOrthoPerspCameraAspect;
+}
+import { Component, DataMap } from "../Types";
+import { Components } from "../Components";
+import { Configurator } from "./src";
+/**
+ * A tool to manage all the configuration from the app centrally.
+ */
+export declare class ConfigManager extends Component {
+    /**
+     * The list of all configurations of this app.
+     */
+    list: DataMap<string, Configurator<any, any>>;
+    /** {@link Component.enabled} */
+    enabled: boolean;
+    /**
+     * A unique identifier for the component.
+     * This UUID is used to register the component within the Components system.
+     */
+    static readonly uuid: "b8c764e0-6b24-4e77-9a32-35fa728ee5b4";
+    constructor(components: Components);
+}
+import { World, Component, Disposable, Event, DataMap, Configurable } from "../Types";
+import { Components } from "../Components";
+import { BCFViewpoint, Viewpoint } from "./src";
+import { ViewpointsConfigManager, ViewpointsConfig } from "./src/viewpoints-config";
+export declare class Viewpoints extends Component implements Disposable, Configurable<ViewpointsConfigManager, ViewpointsConfig> {
+    static readonly uuid: "ee867824-a796-408d-8aa0-4e5962a83c66";
+    enabled: boolean;
+    /**
+     * A DataMap that stores Viewpoint instances, indexed by their unique identifiers (guid).
+     * This map is used to manage and retrieve Viewpoint instances within the Viewpoints component.
+     */
+    readonly list: DataMap<string, Viewpoint>;
+    /**
+     * Creates a new Viewpoint instance and adds it to the list.
+     *
+     * @param world - The world in which the Viewpoint will be created.
+     * @param data - Optional partial data for the Viewpoint. If not provided, default data will be used.
+     *
+     * @returns The newly created Viewpoint instance.
+     */
+    create(world: World, data?: Partial<BCFViewpoint>): Viewpoint;
+    constructor(components: Components);
+    isSetup: boolean;
+    setup(): void;
+    onSetup: Event<unknown>;
+    config: ViewpointsConfigManager;
+    /** {@link Disposable.onDisposed} */
+    readonly onDisposed: Event<unknown>;
+    /**
+     * Disposes of the Viewpoints component and its associated resources.
+     *
+     * This method is responsible for cleaning up any resources held by the Viewpoints component,
+     * such as disposing of the DataMap of Viewpoint instances and triggering and resetting the
+     * onDisposed event.
+     */
+    dispose(): void;
+}
+import * as WEBIFC from "web-ifc";
+import * as FRAG from "@thatopen/fragments";
+import { Component, Components } from "../../core";
+/**
+ * Component to export all the properties from an IFC to a JS object. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/IfcJsonExporter). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/IfcJsonExporter).
+ */
+export declare class IfcJsonExporter extends Component {
+    /**
+     * A unique identifier for the component.
+     * This UUID is used to register the component within the Components system.
+     */
+    static readonly uuid: "b32c4332-cd67-436e-ba7f-196646c7a635";
+    /** {@link Component.enabled} */
+    enabled: boolean;
+    constructor(components: Components);
+    /**
+     * Exports all the properties of an IFC into an array of JS objects.
+     * @param webIfc The instance of [web-ifc](https://github.com/ThatOpen/engine_web-ifc) to use.
+     * @param modelID ID of the IFC model whose properties to extract.
+     * @param indirect whether to get the indirect relationships as well.
+     * @param recursiveSpatial whether to get the properties of spatial items recursively
+     * to make the location data available (e.g. absolute position of building).
+     */
+    export(webIfc: WEBIFC.IfcAPI, modelID: number, indirect?: boolean, recursiveSpatial?: boolean): Promise<FRAG.IfcProperties>;
+}
+import * as WEBIFC from "web-ifc";
+import { Component, Components } from "../../core";
+/**
+ * Component to isolate certain elements from an IFC and export to another IFC. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/IfcIsolator). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/IfcIsolator).
+ */
+export declare class IfcIsolator extends Component {
+    /**
+     * A unique identifier for the component.
+     * This UUID is used to register the component within the Components system.
+     */
+    static readonly uuid: "6eb0ba2f-71c0-464e-bcec-2d7c335186b2";
+    /** {@link Component.enabled} */
+    enabled: boolean;
+    constructor(components: Components);
+    getIsolatedElements(webIfc: WEBIFC.IfcAPI, modelID: number, elementIDs: Array<number>): Promise<any[]>;
+    /**
+     * Exports isolated elements to the new model.
+     * @param webIfc The instance of [web-ifc](https://github.com/ThatOpen/engine_web-ifc) to use.
+     * @param modelID ID of the new IFC model.
+     * @param isolatedElements The array of isolated elements
+     */
+    export(webIfc: WEBIFC.IfcAPI, modelID: number, isolatedElements: Array<any>): Promise<Uint8Array>;
+    splitIfc(webIfc: WEBIFC.IfcAPI, ifcFile: ArrayBuffer, idsToExtract: Array<number>): Promise<Uint8Array>;
+}
+import * as WEBIFC from "web-ifc";
+import { FragmentsGroup } from "@thatopen/fragments";
+import { Disposable, Event, Component, Components } from "../../core";
+import { RelationsMap, ModelsRelationMap, InverseAttribute, IfcRelation, RelationsProcessingConfig, EntitiesRelatedEvent } from "./src";
+/**
+ * Indexer component for IFC entities, facilitating the indexing and retrieval of IFC entity relationships. It is designed to process models properties by indexing their IFC entities' relations based on predefined inverse attributes, and provides methods to query these relations. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/IfcRelationsIndexer). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/IfcRelationsIndexer).
+ */
+export declare class IfcRelationsIndexer extends Component implements Disposable {
+    /**
+     * A unique identifier for the component.
+     * This UUID is used to register the component within the Components system.
+     */
+    static readonly uuid: "23a889ab-83b3-44a4-8bee-ead83438370b";
+    /** {@link Disposable.onDisposed} */
+    readonly onDisposed: Event<string>;
+    /**
+     * Event triggered when relations for a model have been indexed.
+     * This event provides the model's UUID and the relations map generated for that model.
+     *
+     * @property {string} modelID - The UUID of the model for which relations have been indexed.
+     * @property {RelationsMap} relationsMap - The relations map generated for the specified model.
+     * The map keys are expressIDs of entities, and the values are maps where each key is a relation type ID and its value is an array of expressIDs of entities related through that relation type.
+     */
+    readonly onRelationsIndexed: Event<{
+        modelID: string;
+        relationsMap: RelationsMap;
+    }>;
+    /**
+     * Holds the relationship mappings for each model processed by the indexer.
+     * The structure is a map where each key is a model's UUID, and the value is another map.
+     * This inner map's keys are entity expressIDs, and its values are maps where each key is an index
+     * representing a specific relation type, and the value is an array of expressIDs of entities
+     * that are related through that relation type. This structure allows for efficient querying
+     * of entity relationships within a model.
+     */
+    readonly relationMaps: ModelsRelationMap;
+    /** {@link Component.enabled} */
+    enabled: boolean;
+    private _relToAttributesMap;
+    private _inverseAttributes;
+    private _ifcRels;
+    constructor(components: Components);
+    private onFragmentsDisposed;
+    private indexRelations;
+    getAttributeIndex(inverseAttribute: InverseAttribute): number;
+    /**
+     * Adds a relation map to the model's relations map.
+     *
+     * @param model - The 'FragmentsGroup' model to which the relation map will be added.
+     * @param relationMap - The 'RelationsMap' to be added to the model's relations map.
+     *
+     * @fires onRelationsIndexed - Triggers an event with the model's UUID and the added relation map.
+     */
+    setRelationMap(model: FragmentsGroup, relationMap: RelationsMap): void;
+    /**
+     * Processes a given model to index its IFC entities relations based on predefined inverse attributes.
+     * This method iterates through each specified inverse attribute, retrieves the corresponding relations,
+     * and maps them in a structured way to facilitate quick access to related entities.
+     *
+     * The process involves querying the model for each relation type associated with the inverse attributes
+     * and updating the internal relationMaps with the relationships found. This map is keyed by the model's UUID
+     * and contains a nested map where each key is an entity's expressID and its value is another map.
+     * This inner map's keys are the indices of the inverse attributes, and its values are arrays of expressIDs
+     * of entities that are related through that attribute.
+     *
+     * @param model The 'FragmentsGroup' model to be processed. It must have properties loaded.
+     * @returns A promise that resolves to the relations map for the processed model. This map is a detailed
+     * representation of the relations indexed by entity expressIDs and relation types.
+     * @throws An error if the model does not have properties loaded.
+     */
+    process(model: FragmentsGroup, config?: Partial<RelationsProcessingConfig>): Promise<RelationsMap>;
+    /**
+     * Processes a given model from a WebIfc API to index its IFC entities relations.
+     *
+     * @param ifcApi - The WebIfc API instance from which to retrieve the model's properties.
+     * @param modelID - The unique identifier of the model within the WebIfc API.
+     * @returns A promise that resolves to the relations map for the processed model.
+     *          This map is a detailed representation of the relations indexed by entity expressIDs and relation types.
+     */
+    processFromWebIfc(ifcApi: WEBIFC.IfcAPI, modelID: number): Promise<RelationsMap>;
+    /**
+     * Retrieves the relations of a specific entity within a model based on the given relation name.
+     * This method searches the indexed relation maps for the specified model and entity,
+     * returning the IDs of related entities if a match is found.
+     *
+     * @param model The 'FragmentsGroup' model containing the entity, or its UUID.
+     * @param expressID The unique identifier of the entity within the model.
+     * @param attribute The IFC schema inverse attribute of the relation to search for (e.g., "IsDefinedBy", "ContainsElements").
+     * @returns An array of express IDs representing the related entities. If the array is empty, no relations were found.
+     */
+    getEntityRelations(model: FragmentsGroup | string | RelationsMap, expressID: number, attribute: InverseAttribute): number[];
+    /**
+     * Serializes the relations of a given relation map into a JSON string.
+     * This method iterates through the relations in the given map, organizing them into a structured object where each key is an expressID of an entity,
+     * and its value is another object mapping relation indices to arrays of related entity expressIDs.
+     * The resulting object is then serialized into a JSON string.
+     *
+     * @param relationMap - The map of relations to be serialized. The map keys are expressIDs of entities, and the values are maps where each key is a relation type ID and its value is an array of expressIDs of entities related through that relation type.
+     * @returns A JSON string representing the serialized relations of the given relation map.
+     */
+    serializeRelations(relationMap: RelationsMap): string;
+    /**
+     * Serializes the relations of a specific model into a JSON string.
+     * This method iterates through the relations indexed for the given model,
+     * organizing them into a structured object where each key is an expressID of an entity,
+     * and its value is another object mapping relation indices to arrays of related entity expressIDs.
+     * The resulting object is then serialized into a JSON string.
+     *
+     * @param model The 'FragmentsGroup' model whose relations are to be serialized.
+     * @returns A JSON string representing the serialized relations of the specified model.
+     * If the model has no indexed relations, 'null' is returned.
+     */
+    serializeModelRelations(model: FragmentsGroup): string | null;
+    /**
+     * Serializes all relations of every model processed by the indexer into a JSON string.
+     * This method iterates through each model's relations indexed in 'relationMaps', organizing them
+     * into a structured JSON object. Each top-level key in this object corresponds to a model's UUID,
+     * and its value is another object mapping entity expressIDs to their related entities, categorized
+     * by relation types. The structure facilitates easy access to any entity's relations across all models.
+     *
+     * @returns A JSON string representing the serialized relations of all models processed by the indexer.
+     *          If no relations have been indexed, an empty object is returned as a JSON string.
+     */
+    serializeAllRelations(): string;
+    /**
+     * Converts a JSON string representing relations between entities into a structured map.
+     * This method parses the JSON string to reconstruct the relations map that indexes
+     * entity relations by their express IDs. The outer map keys are the express IDs of entities,
+     * and the values are maps where each key is a relation type ID and its value is an array
+     * of express IDs of entities related through that relation type.
+     *
+     * @param json The JSON string to be parsed into the relations map.
+     * @returns A 'Map' where the key is the express ID of an entity as a number, and the value
+     * is another 'Map'. This inner map's key is the relation type ID as a number, and its value
+     * is an array of express IDs (as numbers) of entities related through that relation type.
+     */
+    getRelationsMapFromJSON(json: string): RelationsMap;
+    /** {@link Disposable.dispose} */
+    dispose(): void;
+    /**
+     * Retrieves the entities within a model that have a specific relation with a given entity.
+     *
+     * @param model - The BIM model to search for related entities.
+     * @param inv - The IFC schema inverse attribute of the relation to search for (e.g., "IsDefinedBy", "ContainsElements").
+     * @param expressID - The expressID of the entity within the model.
+     *
+     * @returns A 'Set' with the expressIDs of the entities that have the specified relation with the given entity.
+     *
+     * @throws An error if the model relations are not indexed or if the inverse attribute name is invalid.
+     */
+    getEntitiesWithRelation(model: FragmentsGroup, inv: InverseAttribute, expressID: number): Set<number>;
+    /**
+     * Adds relations between an entity and other entities in a BIM model.
+     *
+     * @param model - The BIM model to which the relations will be added.
+     * @param expressID - The expressID of the entity within the model.
+     * @param relationName - The IFC schema inverse attribute of the relation to add (e.g., "IsDefinedBy", "ContainsElements").
+     * @param relIDs - The expressIDs of the related entities within the model.
+     * @deprecated Use addEntitiesRelation instead. This will be removed in future versions.
+     *
+     * @throws An error if the relation name is not a valid relation name.
+     */
+    addEntityRelations(model: FragmentsGroup, expressID: number, relationName: InverseAttribute, ...relIDs: number[]): void;
+    /**
+     * Converts the relations made into actual IFC data.
+     *
+     * @remarks This function iterates through the changes made to the relations and applies them to the corresponding BIM model.
+     * It only make sense to use it if the relations need to be write in the IFC file.
+     *
+     * @returns A promise that resolves when all the relation changes have been applied.
+     */
+    applyRelationChanges(): Promise<void>;
+    private readonly _changeMap;
+    /**
+     * An event that is triggered when entities are related in a BIM model.
+     * The event provides information about the type of relation, the inverse attribute,
+     * the IDs of the entities related, and the IDs of the entities that are being related.
+     */
+    readonly onEntitiesRelated: Event<EntitiesRelatedEvent>;
+    addEntitiesRelation(model: FragmentsGroup, relatingID: number, rel: {
+        type: IfcRelation;
+        inv: InverseAttribute;
+    }, ...relatedIDs: number[]): void;
+    /**
+     * Gets the children of the given element recursively. E.g. in a model with project - site - building - storeys - rooms, passing a storey will include all its children and the children of the rooms contained in it.
+     *
+     * @param model The BIM model whose children to get.
+     * @param expressID The expressID of the item whose children to get.
+     * @param found An optional parameter that includes a set of expressIDs where the found element IDs will be added.
+     *
+     * @returns A 'Set' with the expressIDs of the found items.
+     */
+    getEntityChildren(model: FragmentsGroup, expressID: number, found?: Set<number>): Set<number>;
+}
+import { Component, Components } from "../../core";
+import { IfcQueryGroup } from "./src/ifc-query-group";
+import { IfcFinderQuery } from "./src";
+/**
+ * Component to make text queries in the IFC.
+ */
+export declare class IfcFinder extends Component {
+    /**
+     * A unique identifier for the component.
+     * This UUID is used to register the component within the Components system.
+     */
+    static readonly uuid: "0da7ad77-f734-42ca-942f-a074adfd1e3a";
+    /** {@link Component.enabled} */
+    enabled: boolean;
+    /**
+     * List of all created {@link IfcQueryGroup} instances.
+     */
+    list: Map<string, IfcQueryGroup>;
+    /**
+     * List of all queries from all created {@link IfcQueryGroup} instances.
+     */
+    get queries(): Set<IfcFinderQuery>;
+    constructor(components: Components);
+    /**
+     * Imports all the query groups provided in the given data. You can generate this data to save the result of queries and persist it over time.
+     * @param data The data containing the serialized query groups to import.
+     */
+    import(data: {
+        [groupID: string]: any;
+    }): void;
+    /**
+     * Exports all the query groups created. You can then import this data back using the import method.
+     */
+    export(): {
+        [groupID: string]: any;
+    };
+    /**
+     * Creates a new {@link IfcQueryGroup}.
+     */
+    create(): IfcQueryGroup;
+    /**
+     * Creates the {@link IfcQueryGroup} with the given ID.
+     */
+    delete(id: string): void;
+    /**
+     * Deletes all {@link IfcQueryGroup} instances.
+     */
+    clear(): void;
+}
+import * as WEBIFC from "web-ifc";
+import { FragmentsGroup } from "@thatopen/fragments";
+import { Component, Disposable, Event, Components } from "../../core";
+import { IfcRelation } from "../IfcRelationsIndexer";
+/**
+ * Types for boolean properties in IFC schema.
+ */
+export type BooleanPropTypes = "IfcBoolean" | "IfcLogical";
+/**
+ * Types for string properties in IFC schema.
+ */
+export type StringPropTypes = "IfcText" | "IfcLabel" | "IfcIdentifier";
+/**
+ * Types for numeric properties in IFC schema.
+ */
+export type NumericPropTypes = "IfcInteger" | "IfcReal";
+/**
+ * Interface representing a map of changed entities in a model. The keys are model UUIDs, and the values are sets of express IDs of changed entities.
+ */
+export interface ChangeMap {
+    [modelID: string]: Set<number>;
+}
+/**
+ * Interface representing a map of attribute listeners. The keys are model UUIDs, and the values are objects with express IDs as keys, and objects with attribute names as keys, and Event objects as values.
+ */
+export interface AttributeListener {
+    [modelID: string]: {
+        [expressID: number]: {
+            [attributeName: string]: Event<String | Boolean | Number>;
+        };
+    };
+}
+/**
+ * Component to manage and edit properties and Psets in IFC files.
+ */
+export declare class IfcPropertiesManager extends Component implements Disposable {
+    /**
+     * A unique identifier for the component.
+     * This UUID is used to register the component within the Components system.
+     */
+    static readonly uuid: "58c2d9f0-183c-48d6-a402-dfcf5b9a34df";
+    /** {@link Disposable.onDisposed} */
+    readonly onDisposed: Event<string>;
+    /**
+     * Event triggered when a file is requested for export.
+     */
+    readonly onRequestFile: Event<unknown>;
+    /**
+     * ArrayBuffer containing the IFC data to be exported.
+     */
+    ifcToExport: ArrayBuffer | null;
+    /**
+     * Event triggered when an element is added to a Pset.
+     */
+    readonly onElementToPset: Event<{
+        model: FragmentsGroup;
+        psetID: number;
+        elementID: number;
+    }>;
+    /**
+     * Event triggered when a property is added to a Pset.
+     */
+    readonly onPropToPset: Event<{
+        model: FragmentsGroup;
+        psetID: number;
+        propID: number;
+    }>;
+    /**
+     * Event triggered when a Pset is removed.
+     */
+    readonly onPsetRemoved: Event<{
+        model: FragmentsGroup;
+        psetID: number;
+    }>;
+    /**
+     * Event triggered when data in the model changes.
+     */
+    readonly onDataChanged: Event<{
+        model: FragmentsGroup;
+        expressID: number;
+    }>;
+    /**
+     * Configuration for the WebAssembly module.
+     */
+    wasm: {
+        path: string;
+        absolute: boolean;
+    };
+    /** {@link Component.enabled} */
+    enabled: boolean;
+    /**
+     * Map of attribute listeners.
+     */
+    attributeListeners: AttributeListener;
+    /**
+     * The currently selected model.
+     */
+    selectedModel?: FragmentsGroup;
+    /**
+     * Map of changed entities in the model.
+     */
+    changeMap: ChangeMap;
+    constructor(components: Components);
+    /** {@link Disposable.dispose} */
+    dispose(): void;
+    /**
+     * Static method to retrieve the IFC schema from a given model.
+     *
+     * @param model - The FragmentsGroup model from which to retrieve the IFC schema.
+     * @throws Will throw an error if the IFC schema is not found in the model.
+     * @returns The IFC schema associated with the given model.
+     */
+    static getIFCSchema(model: FragmentsGroup): import("@thatopen/fragments").IfcSchema;
+    /**
+     * Method to add or update entity attributes in the model.
+     *
+     * @param model - The FragmentsGroup model in which to set the properties.
+     * @param dataToSave - An array of objects representing the properties to be saved.
+     * Each object must have an 'expressID' property, which is the express ID of the entity in the model.
+     * The rest of the properties will be set as the properties of the entity.
+     *
+     * @returns A promise that resolves when all the properties have been set.
+     *
+     * @throws Will throw an error if any of the 'expressID' properties are missing in the 'dataToSave' array.
+     */
+    setData(model: FragmentsGroup, ...dataToSave: Record<string, any>[]): Promise<void>;
+    /**
+     * Creates a new Property Set (Pset) in the given model.
+     *
+     * @param model - The FragmentsGroup model in which to create the Pset.
+     * @param name - The name of the Pset.
+     * @param description - (Optional) The description of the Pset.
+     *
+     * @returns A promise that resolves with an object containing the newly created Pset and its relation.
+     *
+     * @throws Will throw an error if the IFC schema is not found in the model.
+     * @throws Will throw an error if no OwnerHistory is found in the model.
+     */
+    newPset(model: FragmentsGroup, name: string, description?: string): Promise<{
+        pset: WEBIFC.IFC4.IfcPropertySet | WEBIFC.IFC2X3.IfcPropertySet | WEBIFC.IFC4X3.IfcPropertySet;
+    }>;
+    /**
+     * Removes a Property Set (Pset) from the given model.
+     *
+     * @param model - The FragmentsGroup model from which to remove the Pset.
+     * @param psetID - The express IDs of the Psets to be removed.
+     *
+     * @returns A promise that resolves when all the Psets have been removed.
+     *
+     * @throws Will throw an error if any of the 'expressID' properties are missing in the 'psetID' array.
+     * @throws Will throw an error if the Pset to be removed is not of type 'IFCPROPERTYSET'.
+     * @throws Will throw an error if no relation is found between the Pset and the model.
+     */
+    removePset(model: FragmentsGroup, ...psetID: number[]): Promise<void>;
+    /**
+     * Creates a new single-value property of type string in the given model.
+     *
+     * @param model - The FragmentsGroup model in which to create the property.
+     * @param type - The type of the property value. Must be a string property type.
+     * @param name - The name of the property.
+     * @param value - The value of the property. Must be a string.
+     *
+     * @returns The newly created single-value property.
+     *
+     * @throws Will throw an error if the IFC schema is not found in the model.
+     * @throws Will throw an error if no OwnerHistory is found in the model.
+     */
+    newSingleStringProperty(model: FragmentsGroup, type: StringPropTypes, name: string, value: string): Promise<WEBIFC.IFC4.IfcPropertySingleValue | WEBIFC.IFC2X3.IfcPropertySingleValue | WEBIFC.IFC4X3.IfcPropertySingleValue>;
+    /**
+     * Creates a new single-value property of type numeric in the given model.
+     *
+     * @param model - The FragmentsGroup model in which to create the property.
+     * @param type - The type of the property value. Must be a numeric property type.
+     * @param name - The name of the property.
+     * @param value - The value of the property. Must be a number.
+     *
+     * @returns The newly created single-value property.
+     *
+     * @throws Will throw an error if the IFC schema is not found in the model.
+     * @throws Will throw an error if no OwnerHistory is found in the model.
+     */
+    newSingleNumericProperty(model: FragmentsGroup, type: NumericPropTypes, name: string, value: number): Promise<WEBIFC.IFC4.IfcPropertySingleValue | WEBIFC.IFC2X3.IfcPropertySingleValue | WEBIFC.IFC4X3.IfcPropertySingleValue>;
+    /**
+     * Creates a new single-value property of type boolean in the given model.
+     *
+     * @param model - The FragmentsGroup model in which to create the property.
+     * @param type - The type of the property value. Must be a boolean property type.
+     * @param name - The name of the property.
+     * @param value - The value of the property. Must be a boolean.
+     *
+     * @returns The newly created single-value property.
+     *
+     * @throws Will throw an error if the IFC schema is not found in the model.
+     * @throws Will throw an error if no OwnerHistory is found in the model.
+     */
+    newSingleBooleanProperty(model: FragmentsGroup, type: BooleanPropTypes, name: string, value: boolean): Promise<WEBIFC.IFC4.IfcPropertySingleValue | WEBIFC.IFC2X3.IfcPropertySingleValue | WEBIFC.IFC4X3.IfcPropertySingleValue>;
+    /**
+     * Removes a property from a Property Set (Pset) in the given model.
+     *
+     * @param model - The FragmentsGroup model from which to remove the property.
+     * @param psetID - The express ID of the Pset from which to remove the property.
+     * @param propID - The express ID of the property to be removed.
+     *
+     * @returns A promise that resolves when the property has been removed.
+     *
+     * @throws Will throw an error if the Pset or the property to be removed are not found in the model.
+     * @throws Will throw an error if the Pset to be removed is not of type 'IFCPROPERTYSET'.
+     */
+    removePsetProp(model: FragmentsGroup, psetID: number, propID: number): Promise<void>;
+    /**
+     * @deprecated Use indexer.addEntitiesRelation instead. This will be removed in future releases.
+     */
+    addElementToPset(model: FragmentsGroup, psetID: number, ...expressIDs: number[]): void;
+    /**
+     * Adds elements to a Property Set (Pset) in the given model.
+     *
+     * @param model - The FragmentsGroup model in which to add the elements.
+     * @param psetID - The express ID of the Pset to which to add the elements.
+     * @param elementID - The express IDs of the elements to be added.
+     *
+     * @returns A promise that resolves when all the elements have been added.
+     *
+     * @throws Will throw an error if the Pset or the elements to be added are not found in the model.
+     * @throws Will throw an error if the Pset to be added to is not of type 'IFCPROPERTYSET'.
+     * @throws Will throw an error if no relation is found between the Pset and the model.
+     */
+    addPropToPset(model: FragmentsGroup, psetID: number, ...propID: number[]): Promise<void>;
+    /**
+     * Creates a new instance of a relationship between entities in the IFC model.
+     *
+     * @param model - The FragmentsGroup model in which to create the relationship.
+     * @param type - The type of the relationship to create.
+     * @param relatingID - The express ID of the entity that is related to the other entities.
+     * @param relatedIDs - The express IDs of the entities that are related to the relating entity.
+     *
+     * @returns A promise that resolves with the newly created relationship.
+     *
+     * @throws Will throw an error if the relationship type is unsupported.
+     */
+    createIfcRel(model: FragmentsGroup, type: IfcRelation, relatingID: number, relatedIDs: number[]): Promise<any>;
+    /**
+     * Saves the changes made to the model to a new IFC file.
+     *
+     * @param model - The FragmentsGroup model from which to save the changes.
+     * @param ifcToSaveOn - The Uint8Array representing the original IFC file.
+     *
+     * @returns A promise that resolves with the modified IFC data as a Uint8Array.
+     *
+     * @throws Will throw an error if any issues occur during the saving process.
+     */
+    saveToIfc(model: FragmentsGroup, ifcToSaveOn: Uint8Array): Promise<Uint8Array>;
+    /**
+     * Retrieves all the entities of a specific type from the model and returns their express IDs wrapped in Handles.
+     * This is used to make references of an entity inside another entity attributes.
+     *
+     * @param model - The FragmentsGroup model from which to retrieve the entities.
+     * @param type - The type of the entities to retrieve. This should be the express ID of the IFC type.
+     *
+     * @returns A promise that resolves with an array of Handles, each containing the express ID of an entity of the specified type.
+     * @returns null if the model doesn't have any entity of that type
+     */
+    getEntityRef(model: FragmentsGroup, type: number): Promise<WEBIFC.Handle<unknown>[] | null>;
+    /**
+     * Sets an attribute listener for a specific attribute of an entity in the model.
+     * The listener will trigger an event whenever the attribute's value changes.
+     *
+     * @param model - The FragmentsGroup model in which to set the attribute listener.
+     * @param expressID - The express ID of the entity for which to set the listener.
+     * @param attributeName - The name of the attribute for which to set the listener.
+     *
+     * @returns The event that will be triggered when the attribute's value changes.
+     *
+     * @throws Will throw an error if the entity with the given expressID doesn't exist.
+     * @throws Will throw an error if the attribute is an array or null, and it can't have a listener.
+     * @throws Will throw an error if the attribute has a badly defined handle.
+     */
+    setAttributeListener(model: FragmentsGroup, expressID: number, attributeName: string): Promise<Event<String | Number | Boolean>>;
+    private getNewExpressID;
+    private newGUID;
+    getOwnerHistory(model: FragmentsGroup): Promise<{
+        entity: {
+            [attribute: string]: any;
+        };
+        handle: WEBIFC.Handle<unknown>;
+    }>;
+    registerChange(model: FragmentsGroup, ...expressID: number[]): void;
+    newSingleProperty(model: FragmentsGroup, type: string, name: string, value: string | number | boolean): Promise<WEBIFC.IFC4.IfcPropertySingleValue | WEBIFC.IFC2X3.IfcPropertySingleValue | WEBIFC.IFC4X3.IfcPropertySingleValue>;
 }
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
@@ -1105,44 +1685,6 @@ export declare class Classifier extends Component implements Disposable {
     protected saveItem(group: FRAGS.FragmentsGroup, systemName: string, className: string, expressID: number, parentID?: number | null): void;
 }
 export {};
-import * as FRAGS from "@thatopen/fragments";
-import { Components, Component } from "../../core";
-/**
- * A component that hides or isolates fragments within a 3D scene. It extends the base Component class and provides methods to control fragment visibility and isolation. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/Hider). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/Hider).
- */
-export declare class Hider extends Component {
-    /**
-     * A unique identifier for the component.
-     * This UUID is used to register the component within the Components system.
-     */
-    static readonly uuid: "dd9ccf2d-8a21-4821-b7f6-2949add16a29";
-    /** {@link Component.enabled} */
-    enabled: boolean;
-    constructor(components: Components);
-    /**
-     * Sets the visibility of fragments within the 3D scene.
-     * If no 'items' parameter is provided, all fragments will be set to the specified visibility.
-     * If 'items' is provided, only the specified fragments will be affected.
-     *
-     * @param visible - The visibility state to set for the fragments.
-     * @param items - An optional map of fragment IDs and their corresponding sub-fragment IDs to be affected.
-     * If not provided, all fragments will be affected.
-     *
-     * @returns {void}
-     */
-    set(visible: boolean, items?: FRAGS.FragmentIdMap): void;
-    /**
-     * Isolates fragments within the 3D scene by hiding all other fragments and showing only the specified ones.
-     * It calls the 'set' method twice: first to hide all fragments, and then to show only the specified ones.
-     *
-     * @param items - A map of fragment IDs and their corresponding sub-fragment IDs to be isolated.
-     * If not provided, all fragments will be isolated.
-     *
-     * @returns {void}
-     */
-    isolate(items: FRAGS.FragmentIdMap): void;
-    private updateCulledVisibility;
-}
 import { Component, Disposable, Event, Components } from "../../core";
 /**
  * The Exploder component is responsible for managing the explosion of 3D model fragments (generally by floor). 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/Exploder). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/Exploder).
@@ -1192,6 +1734,44 @@ export declare class Exploder extends Component implements Disposable {
      * @throws Will throw an error if the 'Classifier' or 'FragmentsManager' components are not found in the 'components' system.
      */
     set(active: boolean): void;
+}
+import * as FRAGS from "@thatopen/fragments";
+import { Components, Component } from "../../core";
+/**
+ * A component that hides or isolates fragments within a 3D scene. It extends the base Component class and provides methods to control fragment visibility and isolation. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/Hider). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/Hider).
+ */
+export declare class Hider extends Component {
+    /**
+     * A unique identifier for the component.
+     * This UUID is used to register the component within the Components system.
+     */
+    static readonly uuid: "dd9ccf2d-8a21-4821-b7f6-2949add16a29";
+    /** {@link Component.enabled} */
+    enabled: boolean;
+    constructor(components: Components);
+    /**
+     * Sets the visibility of fragments within the 3D scene.
+     * If no 'items' parameter is provided, all fragments will be set to the specified visibility.
+     * If 'items' is provided, only the specified fragments will be affected.
+     *
+     * @param visible - The visibility state to set for the fragments.
+     * @param items - An optional map of fragment IDs and their corresponding sub-fragment IDs to be affected.
+     * If not provided, all fragments will be affected.
+     *
+     * @returns {void}
+     */
+    set(visible: boolean, items?: FRAGS.FragmentIdMap): void;
+    /**
+     * Isolates fragments within the 3D scene by hiding all other fragments and showing only the specified ones.
+     * It calls the 'set' method twice: first to hide all fragments, and then to show only the specified ones.
+     *
+     * @param items - A map of fragment IDs and their corresponding sub-fragment IDs to be isolated.
+     * If not provided, all fragments will be isolated.
+     *
+     * @returns {void}
+     */
+    isolate(items: FRAGS.FragmentIdMap): void;
+    private updateCulledVisibility;
 }
 import * as WEBIFC from "web-ifc";
 import * as FRAGS from "@thatopen/fragments";
@@ -1627,6 +2207,118 @@ export declare class IfcPropertiesTiler extends Component implements Disposable 
     private streamAllProperties;
     private cleanUp;
 }
+import * as THREE from "three";
+export declare function obbFromPoints(vertices: ArrayLike<number>): {
+    center: THREE.Vector3;
+    halfSizes: THREE.Vector3;
+    rotation: THREE.Matrix3;
+    transformation: THREE.Matrix4;
+};
+import * as THREE from "three";
+import * as FRAGS from "@thatopen/fragments";
+import { Component, Components } from "../../core";
+/**
+ * Represents an edge measurement result.
+ */
+export interface MeasureEdge {
+    /**
+     * The distance between the two points of the edge.
+     */
+    distance: number;
+    /**
+     * The two points that define the edge.
+     */
+    points: THREE.Vector3[];
+}
+/**
+ * Utility component for performing measurements on 3D meshes by providing methods for measuring distances between edges and faces. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/MeasurementUtils). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/MeasurementUtils).
+ */
+export declare class MeasurementUtils extends Component {
+    /**
+     * A unique identifier for the component.
+     * This UUID is used to register the component within the Components system.
+     */
+    static uuid: string;
+    /** {@link Component.enabled} */
+    enabled: boolean;
+    constructor(components: Components);
+    /**
+     * Utility method to calculate the distance from a point to a line segment.
+     *
+     * @param point - The point from which to calculate the distance.
+     * @param lineStart - The start point of the line segment.
+     * @param lineEnd - The end point of the line segment.
+     * @param clamp - If true, the distance will be clamped to the line segment's length.
+     * @returns The distance from the point to the line segment.
+     */
+    static distanceFromPointToLine(point: THREE.Vector3, lineStart: THREE.Vector3, lineEnd: THREE.Vector3, clamp?: boolean): number;
+    /**
+     * Method to get the face of a mesh that contains a given triangle index.
+     * It also returns the edges of the found face and their indices.
+     *
+     * @param mesh - The mesh to get the face from. It must be indexed.
+     * @param triangleIndex - The index of the triangle within the mesh.
+     * @param instance - The instance of the mesh (optional).
+     * @returns An object containing the edges of the found face and their indices, or null if no face was found.
+     */
+    getFace(mesh: THREE.InstancedMesh | THREE.Mesh, triangleIndex: number, instance?: number): {
+        edges: MeasureEdge[];
+        indices: Set<number>;
+    } | null;
+    /**
+     * Method to get the vertices and normal of a mesh face at a given index.
+     * It also applies instance transformation if provided.
+     *
+     * @param mesh - The mesh to get the face from. It must be indexed.
+     * @param faceIndex - The index of the face within the mesh.
+     * @param instance - The instance of the mesh (optional).
+     * @returns An object containing the vertices and normal of the face.
+     * @throws Will throw an error if the geometry is not indexed.
+     */
+    getVerticesAndNormal(mesh: THREE.Mesh | THREE.InstancedMesh, faceIndex: number, instance: number | undefined): {
+        p1: THREE.Vector3;
+        p2: THREE.Vector3;
+        p3: THREE.Vector3;
+        faceNormal: THREE.Vector3;
+    };
+    /**
+     * Method to round the vector's components to a specified number of decimal places.
+     * This is used to ensure numerical precision in edge detection.
+     *
+     * @param vector - The vector to round.
+     * @returns The vector with rounded components.
+     */
+    round(vector: THREE.Vector3): void;
+    /**
+     * Calculates the volume of a set of fragments.
+     *
+     * @param frags - A map of fragment IDs to their corresponding item IDs.
+     * @returns The total volume of the fragments and the bounding sphere.
+     *
+     * @remarks
+     * This method creates a set of instanced meshes from the given fragments and item IDs.
+     * It then calculates the volume of each mesh and returns the total volume and its bounding sphere.
+     *
+     * @throws Will throw an error if the geometry of the meshes is not indexed.
+     * @throws Will throw an error if the fragment manager is not available.
+     */
+    getVolumeFromFragments(frags: FRAGS.FragmentIdMap): number;
+    /**
+     * Calculates the total volume of a set of meshes.
+     *
+     * @param meshes - An array of meshes or instanced meshes to calculate the volume from.
+     * @returns The total volume of the meshes and the bounding sphere.
+     *
+     * @remarks
+     * This method calculates the volume of each mesh in the provided array and returns the total volume
+     * and its bounding sphere.
+     *
+     */
+    getVolumeFromMeshes(meshes: THREE.InstancedMesh[] | THREE.Mesh[]): number;
+    private getFaceData;
+    private getVolumeOfMesh;
+    private getSignedVolumeOfTriangle;
+}
 import { XMLParser } from "fast-xml-parser";
 import { Component, Configurable, Disposable, Event, World, DataMap } from "../../core";
 import { BCFTopic, Topic, BCFTopicsConfigManager, BCFTopicsConfig } from "./src";
@@ -1740,6 +2432,7 @@ export declare class BCFTopics extends Component implements Disposable, Configur
         topics: Topic[];
     }>;
 }
+export declare function isPointInFrontOfPlane(point: number[], planePoint: number[], planeNormal: number[]): boolean;
 import * as FRAGS from "@thatopen/fragments";
 import { XMLParser } from "fast-xml-parser";
 import { Component, DataMap } from "../../core/Types";
@@ -1799,257 +2492,6 @@ export declare class IDSSpecifications extends Component {
      */
     export(info: IDSInfo, specifications?: Iterable<IDSSpecification>): string;
 }
-import * as WEBIFC from "web-ifc";
-import * as FRAG from "@thatopen/fragments";
-import { Component, Components } from "../../core";
-/**
- * Component to export all the properties from an IFC to a JS object. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/IfcJsonExporter). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/IfcJsonExporter).
- */
-export declare class IfcJsonExporter extends Component {
-    /**
-     * A unique identifier for the component.
-     * This UUID is used to register the component within the Components system.
-     */
-    static readonly uuid: "b32c4332-cd67-436e-ba7f-196646c7a635";
-    /** {@link Component.enabled} */
-    enabled: boolean;
-    constructor(components: Components);
-    /**
-     * Exports all the properties of an IFC into an array of JS objects.
-     * @param webIfc The instance of [web-ifc](https://github.com/ThatOpen/engine_web-ifc) to use.
-     * @param modelID ID of the IFC model whose properties to extract.
-     * @param indirect whether to get the indirect relationships as well.
-     * @param recursiveSpatial whether to get the properties of spatial items recursively
-     * to make the location data available (e.g. absolute position of building).
-     */
-    export(webIfc: WEBIFC.IfcAPI, modelID: number, indirect?: boolean, recursiveSpatial?: boolean): Promise<FRAG.IfcProperties>;
-}
-import * as WEBIFC from "web-ifc";
-import { Component, Components } from "../../core";
-/**
- * Component to isolate certain elements from an IFC and export to another IFC. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/IfcIsolator). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/IfcIsolator).
- */
-export declare class IfcIsolator extends Component {
-    /**
-     * A unique identifier for the component.
-     * This UUID is used to register the component within the Components system.
-     */
-    static readonly uuid: "6eb0ba2f-71c0-464e-bcec-2d7c335186b2";
-    /** {@link Component.enabled} */
-    enabled: boolean;
-    constructor(components: Components);
-    getIsolatedElements(webIfc: WEBIFC.IfcAPI, modelID: number, elementIDs: Array<number>): Promise<any[]>;
-    /**
-     * Exports isolated elements to the new model.
-     * @param webIfc The instance of [web-ifc](https://github.com/ThatOpen/engine_web-ifc) to use.
-     * @param modelID ID of the new IFC model.
-     * @param isolatedElements The array of isolated elements
-     */
-    export(webIfc: WEBIFC.IfcAPI, modelID: number, isolatedElements: Array<any>): Promise<Uint8Array>;
-    splitIfc(webIfc: WEBIFC.IfcAPI, ifcFile: ArrayBuffer, idsToExtract: Array<number>): Promise<Uint8Array>;
-}
-export declare function isPointInFrontOfPlane(point: number[], planePoint: number[], planeNormal: number[]): boolean;
-import * as WEBIFC from "web-ifc";
-import { FragmentsGroup } from "@thatopen/fragments";
-import { Disposable, Event, Component, Components } from "../../core";
-import { RelationsMap, ModelsRelationMap, InverseAttribute, IfcRelation, RelationsProcessingConfig, EntitiesRelatedEvent } from "./src";
-/**
- * Indexer component for IFC entities, facilitating the indexing and retrieval of IFC entity relationships. It is designed to process models properties by indexing their IFC entities' relations based on predefined inverse attributes, and provides methods to query these relations. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/IfcRelationsIndexer). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/IfcRelationsIndexer).
- */
-export declare class IfcRelationsIndexer extends Component implements Disposable {
-    /**
-     * A unique identifier for the component.
-     * This UUID is used to register the component within the Components system.
-     */
-    static readonly uuid: "23a889ab-83b3-44a4-8bee-ead83438370b";
-    /** {@link Disposable.onDisposed} */
-    readonly onDisposed: Event<string>;
-    /**
-     * Event triggered when relations for a model have been indexed.
-     * This event provides the model's UUID and the relations map generated for that model.
-     *
-     * @property {string} modelID - The UUID of the model for which relations have been indexed.
-     * @property {RelationsMap} relationsMap - The relations map generated for the specified model.
-     * The map keys are expressIDs of entities, and the values are maps where each key is a relation type ID and its value is an array of expressIDs of entities related through that relation type.
-     */
-    readonly onRelationsIndexed: Event<{
-        modelID: string;
-        relationsMap: RelationsMap;
-    }>;
-    /**
-     * Holds the relationship mappings for each model processed by the indexer.
-     * The structure is a map where each key is a model's UUID, and the value is another map.
-     * This inner map's keys are entity expressIDs, and its values are maps where each key is an index
-     * representing a specific relation type, and the value is an array of expressIDs of entities
-     * that are related through that relation type. This structure allows for efficient querying
-     * of entity relationships within a model.
-     */
-    readonly relationMaps: ModelsRelationMap;
-    /** {@link Component.enabled} */
-    enabled: boolean;
-    private _relToAttributesMap;
-    private _inverseAttributes;
-    private _ifcRels;
-    constructor(components: Components);
-    private onFragmentsDisposed;
-    private indexRelations;
-    getAttributeIndex(inverseAttribute: InverseAttribute): number;
-    /**
-     * Adds a relation map to the model's relations map.
-     *
-     * @param model - The 'FragmentsGroup' model to which the relation map will be added.
-     * @param relationMap - The 'RelationsMap' to be added to the model's relations map.
-     *
-     * @fires onRelationsIndexed - Triggers an event with the model's UUID and the added relation map.
-     */
-    setRelationMap(model: FragmentsGroup, relationMap: RelationsMap): void;
-    /**
-     * Processes a given model to index its IFC entities relations based on predefined inverse attributes.
-     * This method iterates through each specified inverse attribute, retrieves the corresponding relations,
-     * and maps them in a structured way to facilitate quick access to related entities.
-     *
-     * The process involves querying the model for each relation type associated with the inverse attributes
-     * and updating the internal relationMaps with the relationships found. This map is keyed by the model's UUID
-     * and contains a nested map where each key is an entity's expressID and its value is another map.
-     * This inner map's keys are the indices of the inverse attributes, and its values are arrays of expressIDs
-     * of entities that are related through that attribute.
-     *
-     * @param model The 'FragmentsGroup' model to be processed. It must have properties loaded.
-     * @returns A promise that resolves to the relations map for the processed model. This map is a detailed
-     * representation of the relations indexed by entity expressIDs and relation types.
-     * @throws An error if the model does not have properties loaded.
-     */
-    process(model: FragmentsGroup, config?: Partial<RelationsProcessingConfig>): Promise<RelationsMap>;
-    /**
-     * Processes a given model from a WebIfc API to index its IFC entities relations.
-     *
-     * @param ifcApi - The WebIfc API instance from which to retrieve the model's properties.
-     * @param modelID - The unique identifier of the model within the WebIfc API.
-     * @returns A promise that resolves to the relations map for the processed model.
-     *          This map is a detailed representation of the relations indexed by entity expressIDs and relation types.
-     */
-    processFromWebIfc(ifcApi: WEBIFC.IfcAPI, modelID: number): Promise<RelationsMap>;
-    /**
-     * Retrieves the relations of a specific entity within a model based on the given relation name.
-     * This method searches the indexed relation maps for the specified model and entity,
-     * returning the IDs of related entities if a match is found.
-     *
-     * @param model The 'FragmentsGroup' model containing the entity, or its UUID.
-     * @param expressID The unique identifier of the entity within the model.
-     * @param attribute The IFC schema inverse attribute of the relation to search for (e.g., "IsDefinedBy", "ContainsElements").
-     * @returns An array of express IDs representing the related entities. If the array is empty, no relations were found.
-     */
-    getEntityRelations(model: FragmentsGroup | string | RelationsMap, expressID: number, attribute: InverseAttribute): number[];
-    /**
-     * Serializes the relations of a given relation map into a JSON string.
-     * This method iterates through the relations in the given map, organizing them into a structured object where each key is an expressID of an entity,
-     * and its value is another object mapping relation indices to arrays of related entity expressIDs.
-     * The resulting object is then serialized into a JSON string.
-     *
-     * @param relationMap - The map of relations to be serialized. The map keys are expressIDs of entities, and the values are maps where each key is a relation type ID and its value is an array of expressIDs of entities related through that relation type.
-     * @returns A JSON string representing the serialized relations of the given relation map.
-     */
-    serializeRelations(relationMap: RelationsMap): string;
-    /**
-     * Serializes the relations of a specific model into a JSON string.
-     * This method iterates through the relations indexed for the given model,
-     * organizing them into a structured object where each key is an expressID of an entity,
-     * and its value is another object mapping relation indices to arrays of related entity expressIDs.
-     * The resulting object is then serialized into a JSON string.
-     *
-     * @param model The 'FragmentsGroup' model whose relations are to be serialized.
-     * @returns A JSON string representing the serialized relations of the specified model.
-     * If the model has no indexed relations, 'null' is returned.
-     */
-    serializeModelRelations(model: FragmentsGroup): string | null;
-    /**
-     * Serializes all relations of every model processed by the indexer into a JSON string.
-     * This method iterates through each model's relations indexed in 'relationMaps', organizing them
-     * into a structured JSON object. Each top-level key in this object corresponds to a model's UUID,
-     * and its value is another object mapping entity expressIDs to their related entities, categorized
-     * by relation types. The structure facilitates easy access to any entity's relations across all models.
-     *
-     * @returns A JSON string representing the serialized relations of all models processed by the indexer.
-     *          If no relations have been indexed, an empty object is returned as a JSON string.
-     */
-    serializeAllRelations(): string;
-    /**
-     * Converts a JSON string representing relations between entities into a structured map.
-     * This method parses the JSON string to reconstruct the relations map that indexes
-     * entity relations by their express IDs. The outer map keys are the express IDs of entities,
-     * and the values are maps where each key is a relation type ID and its value is an array
-     * of express IDs of entities related through that relation type.
-     *
-     * @param json The JSON string to be parsed into the relations map.
-     * @returns A 'Map' where the key is the express ID of an entity as a number, and the value
-     * is another 'Map'. This inner map's key is the relation type ID as a number, and its value
-     * is an array of express IDs (as numbers) of entities related through that relation type.
-     */
-    getRelationsMapFromJSON(json: string): RelationsMap;
-    /** {@link Disposable.dispose} */
-    dispose(): void;
-    /**
-     * Retrieves the entities within a model that have a specific relation with a given entity.
-     *
-     * @param model - The BIM model to search for related entities.
-     * @param inv - The IFC schema inverse attribute of the relation to search for (e.g., "IsDefinedBy", "ContainsElements").
-     * @param expressID - The expressID of the entity within the model.
-     *
-     * @returns A 'Set' with the expressIDs of the entities that have the specified relation with the given entity.
-     *
-     * @throws An error if the model relations are not indexed or if the inverse attribute name is invalid.
-     */
-    getEntitiesWithRelation(model: FragmentsGroup, inv: InverseAttribute, expressID: number): Set<number>;
-    /**
-     * Adds relations between an entity and other entities in a BIM model.
-     *
-     * @param model - The BIM model to which the relations will be added.
-     * @param expressID - The expressID of the entity within the model.
-     * @param relationName - The IFC schema inverse attribute of the relation to add (e.g., "IsDefinedBy", "ContainsElements").
-     * @param relIDs - The expressIDs of the related entities within the model.
-     * @deprecated Use addEntitiesRelation instead. This will be removed in future versions.
-     *
-     * @throws An error if the relation name is not a valid relation name.
-     */
-    addEntityRelations(model: FragmentsGroup, expressID: number, relationName: InverseAttribute, ...relIDs: number[]): void;
-    /**
-     * Converts the relations made into actual IFC data.
-     *
-     * @remarks This function iterates through the changes made to the relations and applies them to the corresponding BIM model.
-     * It only make sense to use it if the relations need to be write in the IFC file.
-     *
-     * @returns A promise that resolves when all the relation changes have been applied.
-     */
-    applyRelationChanges(): Promise<void>;
-    private readonly _changeMap;
-    /**
-     * An event that is triggered when entities are related in a BIM model.
-     * The event provides information about the type of relation, the inverse attribute,
-     * the IDs of the entities related, and the IDs of the entities that are being related.
-     */
-    readonly onEntitiesRelated: Event<EntitiesRelatedEvent>;
-    addEntitiesRelation(model: FragmentsGroup, relatingID: number, rel: {
-        type: IfcRelation;
-        inv: InverseAttribute;
-    }, ...relatedIDs: number[]): void;
-    /**
-     * Gets the children of the given element recursively. E.g. in a model with project - site - building - storeys - rooms, passing a storey will include all its children and the children of the rooms contained in it.
-     *
-     * @param model The BIM model whose children to get.
-     * @param expressID The expressID of the item whose children to get.
-     * @param found An optional parameter that includes a set of expressIDs where the found element IDs will be added.
-     *
-     * @returns A 'Set' with the expressIDs of the found items.
-     */
-    getEntityChildren(model: FragmentsGroup, expressID: number, found?: Set<number>): Set<number>;
-}
-import * as THREE from "three";
-export declare function obbFromPoints(vertices: ArrayLike<number>): {
-    center: THREE.Vector3;
-    halfSizes: THREE.Vector3;
-    rotation: THREE.Matrix3;
-    transformation: THREE.Matrix4;
-};
 import * as THREE from "three";
 export declare class MaterialsUtils {
     static isTransparent(material: THREE.Material): boolean;
@@ -2059,343 +2501,6 @@ export declare class UUID {
     private static _lut;
     static create(): string;
     static validate(uuid: string): void;
-}
-import * as WEBIFC from "web-ifc";
-import { FragmentsGroup } from "@thatopen/fragments";
-import { Component, Disposable, Event, Components } from "../../core";
-import { IfcRelation } from "../IfcRelationsIndexer";
-/**
- * Types for boolean properties in IFC schema.
- */
-export type BooleanPropTypes = "IfcBoolean" | "IfcLogical";
-/**
- * Types for string properties in IFC schema.
- */
-export type StringPropTypes = "IfcText" | "IfcLabel" | "IfcIdentifier";
-/**
- * Types for numeric properties in IFC schema.
- */
-export type NumericPropTypes = "IfcInteger" | "IfcReal";
-/**
- * Interface representing a map of changed entities in a model. The keys are model UUIDs, and the values are sets of express IDs of changed entities.
- */
-export interface ChangeMap {
-    [modelID: string]: Set<number>;
-}
-/**
- * Interface representing a map of attribute listeners. The keys are model UUIDs, and the values are objects with express IDs as keys, and objects with attribute names as keys, and Event objects as values.
- */
-export interface AttributeListener {
-    [modelID: string]: {
-        [expressID: number]: {
-            [attributeName: string]: Event<String | Boolean | Number>;
-        };
-    };
-}
-/**
- * Component to manage and edit properties and Psets in IFC files.
- */
-export declare class IfcPropertiesManager extends Component implements Disposable {
-    /**
-     * A unique identifier for the component.
-     * This UUID is used to register the component within the Components system.
-     */
-    static readonly uuid: "58c2d9f0-183c-48d6-a402-dfcf5b9a34df";
-    /** {@link Disposable.onDisposed} */
-    readonly onDisposed: Event<string>;
-    /**
-     * Event triggered when a file is requested for export.
-     */
-    readonly onRequestFile: Event<unknown>;
-    /**
-     * ArrayBuffer containing the IFC data to be exported.
-     */
-    ifcToExport: ArrayBuffer | null;
-    /**
-     * Event triggered when an element is added to a Pset.
-     */
-    readonly onElementToPset: Event<{
-        model: FragmentsGroup;
-        psetID: number;
-        elementID: number;
-    }>;
-    /**
-     * Event triggered when a property is added to a Pset.
-     */
-    readonly onPropToPset: Event<{
-        model: FragmentsGroup;
-        psetID: number;
-        propID: number;
-    }>;
-    /**
-     * Event triggered when a Pset is removed.
-     */
-    readonly onPsetRemoved: Event<{
-        model: FragmentsGroup;
-        psetID: number;
-    }>;
-    /**
-     * Event triggered when data in the model changes.
-     */
-    readonly onDataChanged: Event<{
-        model: FragmentsGroup;
-        expressID: number;
-    }>;
-    /**
-     * Configuration for the WebAssembly module.
-     */
-    wasm: {
-        path: string;
-        absolute: boolean;
-    };
-    /** {@link Component.enabled} */
-    enabled: boolean;
-    /**
-     * Map of attribute listeners.
-     */
-    attributeListeners: AttributeListener;
-    /**
-     * The currently selected model.
-     */
-    selectedModel?: FragmentsGroup;
-    /**
-     * Map of changed entities in the model.
-     */
-    changeMap: ChangeMap;
-    constructor(components: Components);
-    /** {@link Disposable.dispose} */
-    dispose(): void;
-    /**
-     * Static method to retrieve the IFC schema from a given model.
-     *
-     * @param model - The FragmentsGroup model from which to retrieve the IFC schema.
-     * @throws Will throw an error if the IFC schema is not found in the model.
-     * @returns The IFC schema associated with the given model.
-     */
-    static getIFCSchema(model: FragmentsGroup): import("@thatopen/fragments").IfcSchema;
-    /**
-     * Method to add or update entity attributes in the model.
-     *
-     * @param model - The FragmentsGroup model in which to set the properties.
-     * @param dataToSave - An array of objects representing the properties to be saved.
-     * Each object must have an 'expressID' property, which is the express ID of the entity in the model.
-     * The rest of the properties will be set as the properties of the entity.
-     *
-     * @returns A promise that resolves when all the properties have been set.
-     *
-     * @throws Will throw an error if any of the 'expressID' properties are missing in the 'dataToSave' array.
-     */
-    setData(model: FragmentsGroup, ...dataToSave: Record<string, any>[]): Promise<void>;
-    /**
-     * Creates a new Property Set (Pset) in the given model.
-     *
-     * @param model - The FragmentsGroup model in which to create the Pset.
-     * @param name - The name of the Pset.
-     * @param description - (Optional) The description of the Pset.
-     *
-     * @returns A promise that resolves with an object containing the newly created Pset and its relation.
-     *
-     * @throws Will throw an error if the IFC schema is not found in the model.
-     * @throws Will throw an error if no OwnerHistory is found in the model.
-     */
-    newPset(model: FragmentsGroup, name: string, description?: string): Promise<{
-        pset: WEBIFC.IFC4.IfcPropertySet | WEBIFC.IFC2X3.IfcPropertySet | WEBIFC.IFC4X3.IfcPropertySet;
-    }>;
-    /**
-     * Removes a Property Set (Pset) from the given model.
-     *
-     * @param model - The FragmentsGroup model from which to remove the Pset.
-     * @param psetID - The express IDs of the Psets to be removed.
-     *
-     * @returns A promise that resolves when all the Psets have been removed.
-     *
-     * @throws Will throw an error if any of the 'expressID' properties are missing in the 'psetID' array.
-     * @throws Will throw an error if the Pset to be removed is not of type 'IFCPROPERTYSET'.
-     * @throws Will throw an error if no relation is found between the Pset and the model.
-     */
-    removePset(model: FragmentsGroup, ...psetID: number[]): Promise<void>;
-    /**
-     * Creates a new single-value property of type string in the given model.
-     *
-     * @param model - The FragmentsGroup model in which to create the property.
-     * @param type - The type of the property value. Must be a string property type.
-     * @param name - The name of the property.
-     * @param value - The value of the property. Must be a string.
-     *
-     * @returns The newly created single-value property.
-     *
-     * @throws Will throw an error if the IFC schema is not found in the model.
-     * @throws Will throw an error if no OwnerHistory is found in the model.
-     */
-    newSingleStringProperty(model: FragmentsGroup, type: StringPropTypes, name: string, value: string): Promise<WEBIFC.IFC4.IfcPropertySingleValue | WEBIFC.IFC2X3.IfcPropertySingleValue | WEBIFC.IFC4X3.IfcPropertySingleValue>;
-    /**
-     * Creates a new single-value property of type numeric in the given model.
-     *
-     * @param model - The FragmentsGroup model in which to create the property.
-     * @param type - The type of the property value. Must be a numeric property type.
-     * @param name - The name of the property.
-     * @param value - The value of the property. Must be a number.
-     *
-     * @returns The newly created single-value property.
-     *
-     * @throws Will throw an error if the IFC schema is not found in the model.
-     * @throws Will throw an error if no OwnerHistory is found in the model.
-     */
-    newSingleNumericProperty(model: FragmentsGroup, type: NumericPropTypes, name: string, value: number): Promise<WEBIFC.IFC4.IfcPropertySingleValue | WEBIFC.IFC2X3.IfcPropertySingleValue | WEBIFC.IFC4X3.IfcPropertySingleValue>;
-    /**
-     * Creates a new single-value property of type boolean in the given model.
-     *
-     * @param model - The FragmentsGroup model in which to create the property.
-     * @param type - The type of the property value. Must be a boolean property type.
-     * @param name - The name of the property.
-     * @param value - The value of the property. Must be a boolean.
-     *
-     * @returns The newly created single-value property.
-     *
-     * @throws Will throw an error if the IFC schema is not found in the model.
-     * @throws Will throw an error if no OwnerHistory is found in the model.
-     */
-    newSingleBooleanProperty(model: FragmentsGroup, type: BooleanPropTypes, name: string, value: boolean): Promise<WEBIFC.IFC4.IfcPropertySingleValue | WEBIFC.IFC2X3.IfcPropertySingleValue | WEBIFC.IFC4X3.IfcPropertySingleValue>;
-    /**
-     * Removes a property from a Property Set (Pset) in the given model.
-     *
-     * @param model - The FragmentsGroup model from which to remove the property.
-     * @param psetID - The express ID of the Pset from which to remove the property.
-     * @param propID - The express ID of the property to be removed.
-     *
-     * @returns A promise that resolves when the property has been removed.
-     *
-     * @throws Will throw an error if the Pset or the property to be removed are not found in the model.
-     * @throws Will throw an error if the Pset to be removed is not of type 'IFCPROPERTYSET'.
-     */
-    removePsetProp(model: FragmentsGroup, psetID: number, propID: number): Promise<void>;
-    /**
-     * @deprecated Use indexer.addEntitiesRelation instead. This will be removed in future releases.
-     */
-    addElementToPset(model: FragmentsGroup, psetID: number, ...expressIDs: number[]): void;
-    /**
-     * Adds elements to a Property Set (Pset) in the given model.
-     *
-     * @param model - The FragmentsGroup model in which to add the elements.
-     * @param psetID - The express ID of the Pset to which to add the elements.
-     * @param elementID - The express IDs of the elements to be added.
-     *
-     * @returns A promise that resolves when all the elements have been added.
-     *
-     * @throws Will throw an error if the Pset or the elements to be added are not found in the model.
-     * @throws Will throw an error if the Pset to be added to is not of type 'IFCPROPERTYSET'.
-     * @throws Will throw an error if no relation is found between the Pset and the model.
-     */
-    addPropToPset(model: FragmentsGroup, psetID: number, ...propID: number[]): Promise<void>;
-    /**
-     * Creates a new instance of a relationship between entities in the IFC model.
-     *
-     * @param model - The FragmentsGroup model in which to create the relationship.
-     * @param type - The type of the relationship to create.
-     * @param relatingID - The express ID of the entity that is related to the other entities.
-     * @param relatedIDs - The express IDs of the entities that are related to the relating entity.
-     *
-     * @returns A promise that resolves with the newly created relationship.
-     *
-     * @throws Will throw an error if the relationship type is unsupported.
-     */
-    createIfcRel(model: FragmentsGroup, type: IfcRelation, relatingID: number, relatedIDs: number[]): Promise<any>;
-    /**
-     * Saves the changes made to the model to a new IFC file.
-     *
-     * @param model - The FragmentsGroup model from which to save the changes.
-     * @param ifcToSaveOn - The Uint8Array representing the original IFC file.
-     *
-     * @returns A promise that resolves with the modified IFC data as a Uint8Array.
-     *
-     * @throws Will throw an error if any issues occur during the saving process.
-     */
-    saveToIfc(model: FragmentsGroup, ifcToSaveOn: Uint8Array): Promise<Uint8Array>;
-    /**
-     * Retrieves all the entities of a specific type from the model and returns their express IDs wrapped in Handles.
-     * This is used to make references of an entity inside another entity attributes.
-     *
-     * @param model - The FragmentsGroup model from which to retrieve the entities.
-     * @param type - The type of the entities to retrieve. This should be the express ID of the IFC type.
-     *
-     * @returns A promise that resolves with an array of Handles, each containing the express ID of an entity of the specified type.
-     * @returns null if the model doesn't have any entity of that type
-     */
-    getEntityRef(model: FragmentsGroup, type: number): Promise<WEBIFC.Handle<unknown>[] | null>;
-    /**
-     * Sets an attribute listener for a specific attribute of an entity in the model.
-     * The listener will trigger an event whenever the attribute's value changes.
-     *
-     * @param model - The FragmentsGroup model in which to set the attribute listener.
-     * @param expressID - The express ID of the entity for which to set the listener.
-     * @param attributeName - The name of the attribute for which to set the listener.
-     *
-     * @returns The event that will be triggered when the attribute's value changes.
-     *
-     * @throws Will throw an error if the entity with the given expressID doesn't exist.
-     * @throws Will throw an error if the attribute is an array or null, and it can't have a listener.
-     * @throws Will throw an error if the attribute has a badly defined handle.
-     */
-    setAttributeListener(model: FragmentsGroup, expressID: number, attributeName: string): Promise<Event<String | Number | Boolean>>;
-    private getNewExpressID;
-    private newGUID;
-    getOwnerHistory(model: FragmentsGroup): Promise<{
-        entity: {
-            [attribute: string]: any;
-        };
-        handle: WEBIFC.Handle<unknown>;
-    }>;
-    registerChange(model: FragmentsGroup, ...expressID: number[]): void;
-    newSingleProperty(model: FragmentsGroup, type: string, name: string, value: string | number | boolean): Promise<WEBIFC.IFC4.IfcPropertySingleValue | WEBIFC.IFC2X3.IfcPropertySingleValue | WEBIFC.IFC4X3.IfcPropertySingleValue>;
-}
-import { Component, Components } from "../../core";
-import { IfcQueryGroup } from "./src/ifc-query-group";
-import { IfcFinderQuery } from "./src";
-/**
- * Component to make text queries in the IFC.
- */
-export declare class IfcFinder extends Component {
-    /**
-     * A unique identifier for the component.
-     * This UUID is used to register the component within the Components system.
-     */
-    static readonly uuid: "0da7ad77-f734-42ca-942f-a074adfd1e3a";
-    /** {@link Component.enabled} */
-    enabled: boolean;
-    /**
-     * List of all created {@link IfcQueryGroup} instances.
-     */
-    list: Map<string, IfcQueryGroup>;
-    /**
-     * List of all queries from all created {@link IfcQueryGroup} instances.
-     */
-    get queries(): Set<IfcFinderQuery>;
-    constructor(components: Components);
-    /**
-     * Imports all the query groups provided in the given data. You can generate this data to save the result of queries and persist it over time.
-     * @param data The data containing the serialized query groups to import.
-     */
-    import(data: {
-        [groupID: string]: any;
-    }): void;
-    /**
-     * Exports all the query groups created. You can then import this data back using the import method.
-     */
-    export(): {
-        [groupID: string]: any;
-    };
-    /**
-     * Creates a new {@link IfcQueryGroup}.
-     */
-    create(): IfcQueryGroup;
-    /**
-     * Creates the {@link IfcQueryGroup} with the given ID.
-     */
-    delete(id: string): void;
-    /**
-     * Deletes all {@link IfcQueryGroup} instances.
-     */
-    clear(): void;
 }
 import * as THREE from "three";
 import { Component, Components, Disposable, Event, World } from "../core";
@@ -2544,144 +2649,6 @@ export declare class SectionGenerator extends Component {
     private updatePlane2DCoordinateSystem;
     private shapecast;
 }
-import * as THREE from "three";
-import * as FRAGS from "@thatopen/fragments";
-import { Component, Components } from "../../core";
-/**
- * Represents an edge measurement result.
- */
-export interface MeasureEdge {
-    /**
-     * The distance between the two points of the edge.
-     */
-    distance: number;
-    /**
-     * The two points that define the edge.
-     */
-    points: THREE.Vector3[];
-}
-/**
- * Utility component for performing measurements on 3D meshes by providing methods for measuring distances between edges and faces. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/MeasurementUtils). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/MeasurementUtils).
- */
-export declare class MeasurementUtils extends Component {
-    /**
-     * A unique identifier for the component.
-     * This UUID is used to register the component within the Components system.
-     */
-    static uuid: string;
-    /** {@link Component.enabled} */
-    enabled: boolean;
-    constructor(components: Components);
-    /**
-     * Utility method to calculate the distance from a point to a line segment.
-     *
-     * @param point - The point from which to calculate the distance.
-     * @param lineStart - The start point of the line segment.
-     * @param lineEnd - The end point of the line segment.
-     * @param clamp - If true, the distance will be clamped to the line segment's length.
-     * @returns The distance from the point to the line segment.
-     */
-    static distanceFromPointToLine(point: THREE.Vector3, lineStart: THREE.Vector3, lineEnd: THREE.Vector3, clamp?: boolean): number;
-    /**
-     * Method to get the face of a mesh that contains a given triangle index.
-     * It also returns the edges of the found face and their indices.
-     *
-     * @param mesh - The mesh to get the face from. It must be indexed.
-     * @param triangleIndex - The index of the triangle within the mesh.
-     * @param instance - The instance of the mesh (optional).
-     * @returns An object containing the edges of the found face and their indices, or null if no face was found.
-     */
-    getFace(mesh: THREE.InstancedMesh | THREE.Mesh, triangleIndex: number, instance?: number): {
-        edges: MeasureEdge[];
-        indices: Set<number>;
-    } | null;
-    /**
-     * Method to get the vertices and normal of a mesh face at a given index.
-     * It also applies instance transformation if provided.
-     *
-     * @param mesh - The mesh to get the face from. It must be indexed.
-     * @param faceIndex - The index of the face within the mesh.
-     * @param instance - The instance of the mesh (optional).
-     * @returns An object containing the vertices and normal of the face.
-     * @throws Will throw an error if the geometry is not indexed.
-     */
-    getVerticesAndNormal(mesh: THREE.Mesh | THREE.InstancedMesh, faceIndex: number, instance: number | undefined): {
-        p1: THREE.Vector3;
-        p2: THREE.Vector3;
-        p3: THREE.Vector3;
-        faceNormal: THREE.Vector3;
-    };
-    /**
-     * Method to round the vector's components to a specified number of decimal places.
-     * This is used to ensure numerical precision in edge detection.
-     *
-     * @param vector - The vector to round.
-     * @returns The vector with rounded components.
-     */
-    round(vector: THREE.Vector3): void;
-    /**
-     * Calculates the volume of a set of fragments.
-     *
-     * @param frags - A map of fragment IDs to their corresponding item IDs.
-     * @returns The total volume of the fragments and the bounding sphere.
-     *
-     * @remarks
-     * This method creates a set of instanced meshes from the given fragments and item IDs.
-     * It then calculates the volume of each mesh and returns the total volume and its bounding sphere.
-     *
-     * @throws Will throw an error if the geometry of the meshes is not indexed.
-     * @throws Will throw an error if the fragment manager is not available.
-     */
-    getVolumeFromFragments(frags: FRAGS.FragmentIdMap): number;
-    /**
-     * Calculates the total volume of a set of meshes.
-     *
-     * @param meshes - An array of meshes or instanced meshes to calculate the volume from.
-     * @returns The total volume of the meshes and the bounding sphere.
-     *
-     * @remarks
-     * This method calculates the volume of each mesh in the provided array and returns the total volume
-     * and its bounding sphere.
-     *
-     */
-    getVolumeFromMeshes(meshes: THREE.InstancedMesh[] | THREE.Mesh[]): number;
-    private getFaceData;
-    private getVolumeOfMesh;
-    private getSignedVolumeOfTriangle;
-}
-import * as THREE from "three";
-import { BooleanSettingsControl, ColorSettingsControl, NumberSettingControl } from "../../Types";
-import { Configurator } from "../../ConfigManager";
-import { Clipper } from "../index";
-type ClipperConfigType = {
-    enabled: BooleanSettingsControl;
-    visible: BooleanSettingsControl;
-    color: ColorSettingsControl;
-    opacity: NumberSettingControl;
-    size: NumberSettingControl;
-};
-/**
- * Configuration interface for the {@link Clipper}.
- */
-export interface ClipperConfig {
-    color: THREE.Color;
-    opacity: number;
-    size: number;
-}
-export declare class ClipperConfigManager extends Configurator<Clipper, ClipperConfigType> {
-    protected _config: ClipperConfigType;
-    get enabled(): boolean;
-    set enabled(value: boolean);
-    get visible(): boolean;
-    set visible(value: boolean);
-    get color(): THREE.Color;
-    set color(value: THREE.Color);
-    get opacity(): number;
-    set opacity(value: number);
-    get size(): number;
-    set size(value: number);
-}
-export {};
 import { BooleanSettingsControl } from "../../Types";
 import { Viewpoints } from "../index";
 import { Configurator } from "../../ConfigManager";
@@ -2706,58 +2673,11 @@ export declare class ViewpointsConfigManager extends Configurator<Viewpoints, Vi
 }
 export {};
 import * as WEBIFC from "web-ifc";
-import { IfcItemsCategories } from "../../../ifc";
-export declare class SpatialStructure {
-    itemsByFloor: IfcItemsCategories;
-    private _units;
-    setUp(webIfc: WEBIFC.IfcAPI): void;
-    cleanUp(): void;
+export interface IfcItemsCategories {
+    [itemID: number]: number;
 }
-import * as FRAGS from "@thatopen/fragments";
-import * as WEBIFC from "web-ifc";
-export declare class SpatialIdsFinder {
-    static get(model: FRAGS.FragmentsGroup, webIfc: WEBIFC.IfcAPI): void;
-}
-import * as WEBIFC from "web-ifc";
-/** Configuration of the IFC-fragment conversion. */
-export declare class IfcFragmentSettings {
-    /** Whether to extract the IFC properties into a JSON. */
-    includeProperties: boolean;
-    /**
-     * Generate the geometry for categories that are not included by default,
-     * like IFCSPACE.
-     */
-    optionalCategories: number[];
-    /** Path of the WASM for [web-ifc](https://github.com/ThatOpen/engine_web-ifc). */
-    wasm: {
-        path: string;
-        absolute: boolean;
-        logLevel?: WEBIFC.LogLevel;
-    };
-    /** List of categories that won't be converted to fragments. */
-    excludedCategories: Set<number>;
-    /** Exclusive list of categories that will be converted to fragments. If this contains any category, any other categories will be ignored. */
-    includedCategories: Set<number>;
-    /** Whether to save the absolute location of all IFC items. */
-    saveLocations: boolean;
-    /** Loader settings for [web-ifc](https://github.com/ThatOpen/engine_web-ifc). */
-    webIfc: WEBIFC.LoaderSettings;
-    /**
-     * Whether to automatically set the path to the WASM file for [web-ifc](https://github.com/ThatOpen/engine_web-ifc).
-     * If set to true, the path will be set to the default path of the WASM file.
-     * If set to false, the path must be provided manually in the 'wasm.path' property.
-     * Default value is true.
-     */
-    autoSetWasm: boolean;
-    /**
-     * Custom function to handle the file location for [web-ifc](https://github.com/ThatOpen/engine_web-ifc).
-     * This function will be called when [web-ifc](https://github.com/ThatOpen/engine_web-ifc) needs to locate a file.
-     * If set to null, the default file location handler will be used.
-     *
-     * @param url - The URL of the file to locate.
-     * @returns The absolute path of the file.
-     */
-    customLocateFileHandler: WEBIFC.LocateFileHandlerFn | null;
+export declare class IfcCategories {
+    getAll(webIfc: WEBIFC.IfcAPI, modelID: number): IfcItemsCategories;
 }
 /**
  * A map of IFC element types to their corresponding names. The keys are the IFC entity type numbers, and the values are the names of the IFC entities.
@@ -2770,23 +2690,9 @@ export declare class IfcFragmentSettings {
 export declare const IfcElements: {
     [key: number]: string;
 };
-/**
- * A map that associates each unique integer identifier (IFC Entity ID) with its corresponding category name. This map is used to map IFC entities to their respective categories for easier identification and processing.
- */
-export declare const IfcCategoryMap: {
-    [key: number]: string;
+export declare const ifcCategoryCase: {
+    [upperCase: string]: string;
 };
-/**
- * A Set of unique numbers representing different types of IFC geometries.
- */
-export declare const GeometryTypes: Set<number>;
-import * as WEBIFC from "web-ifc";
-export interface IfcItemsCategories {
-    [itemID: number]: number;
-}
-export declare class IfcCategories {
-    getAll(webIfc: WEBIFC.IfcAPI, modelID: number): IfcItemsCategories;
-}
 import * as FRAGS from "@thatopen/fragments";
 export declare class IfcPropertiesUtils {
     static getUnits(group: FRAGS.FragmentsGroup): Promise<number>;
@@ -2812,9 +2718,16 @@ export declare class IfcPropertiesUtils {
     static attributeExists(model: FRAGS.FragmentsGroup, expressID: number, attribute: string): Promise<boolean>;
     static groupEntitiesByType(model: FRAGS.FragmentsGroup, expressIDs: Set<number> | number[]): Promise<Map<number, Set<number>>>;
 }
-export declare const ifcCategoryCase: {
-    [upperCase: string]: string;
+/**
+ * A map that associates each unique integer identifier (IFC Entity ID) with its corresponding category name. This map is used to map IFC entities to their respective categories for easier identification and processing.
+ */
+export declare const IfcCategoryMap: {
+    [key: number]: string;
 };
+/**
+ * A Set of unique numbers representing different types of IFC geometries.
+ */
+export declare const GeometryTypes: Set<number>;
 import * as FRAGS from "@thatopen/fragments";
 import { IfcFinderQuery } from "./ifc-finder-query";
 import { Components } from "../../../core";
@@ -2884,113 +2797,149 @@ export declare class IfcQueryGroup {
      */
     update(modelID: string, file: File): Promise<void>;
 }
-import { Components } from "../../../../core/Components";
-import { IDSFacet } from "../facets";
-export declare const createPropertyFacets: (components: Components, elements: any) => IDSFacet[];
+import * as THREE from "three";
+import { BooleanSettingsControl, ColorSettingsControl, NumberSettingControl } from "../../Types";
+import { Configurator } from "../../ConfigManager";
+import { Clipper } from "../index";
+type ClipperConfigType = {
+    enabled: BooleanSettingsControl;
+    visible: BooleanSettingsControl;
+    color: ColorSettingsControl;
+    opacity: NumberSettingControl;
+    size: NumberSettingControl;
+};
+/**
+ * Configuration interface for the {@link Clipper}.
+ */
+export interface ClipperConfig {
+    color: THREE.Color;
+    opacity: number;
+    size: number;
+}
+export declare class ClipperConfigManager extends Configurator<Clipper, ClipperConfigType> {
+    protected _config: ClipperConfigType;
+    get enabled(): boolean;
+    set enabled(value: boolean);
+    get visible(): boolean;
+    set visible(value: boolean);
+    get color(): THREE.Color;
+    set color(value: THREE.Color);
+    get opacity(): number;
+    set opacity(value: number);
+    get size(): number;
+    set size(value: number);
+}
+export {};
 import { InverseAttribute } from "./types";
 export declare const relToAttributesMap: Map<160246688 | 2655215786 | 919958153 | 1307041759 | 4186316022 | 781010003 | 307848117 | 3242617779 | 279856033 | 1204542856 | 2857406711 | 2565941209 | 2495723537 | 3268803585 | 982818633, {
     forRelating: InverseAttribute;
     forRelated: InverseAttribute;
 }>;
-import * as THREE from "three";
-import { Resizeable, Updateable, World, Event, Disposable, Configurable } from "../../Types";
-import { MiniMapConfig, MiniMapConfigManager } from "./mini-map-config";
-import { Components } from "../../Components";
+import * as WEBIFC from "web-ifc";
+import { IfcItemsCategories } from "../../../ifc";
+export declare class SpatialStructure {
+    itemsByFloor: IfcItemsCategories;
+    private _units;
+    setUp(webIfc: WEBIFC.IfcAPI): void;
+    cleanUp(): void;
+}
+import * as FRAGS from "@thatopen/fragments";
+import * as WEBIFC from "web-ifc";
+export declare class SpatialIdsFinder {
+    static get(model: FRAGS.FragmentsGroup, webIfc: WEBIFC.IfcAPI): void;
+}
+import { Components } from "../../../../core/Components";
+import { IDSFacet } from "../facets";
+export declare const createPropertyFacets: (components: Components, elements: any) => IDSFacet[];
+import * as WEBIFC from "web-ifc";
+/** Configuration of the IFC-fragment conversion. */
+export declare class IfcFragmentSettings {
+    /** Whether to extract the IFC properties into a JSON. */
+    includeProperties: boolean;
+    /**
+     * Generate the geometry for categories that are not included by default,
+     * like IFCSPACE.
+     */
+    optionalCategories: number[];
+    /** Path of the WASM for [web-ifc](https://github.com/ThatOpen/engine_web-ifc). */
+    wasm: {
+        path: string;
+        absolute: boolean;
+        logLevel?: WEBIFC.LogLevel;
+    };
+    /** List of categories that won't be converted to fragments. */
+    excludedCategories: Set<number>;
+    /** Exclusive list of categories that will be converted to fragments. If this contains any category, any other categories will be ignored. */
+    includedCategories: Set<number>;
+    /** Whether to save the absolute location of all IFC items. */
+    saveLocations: boolean;
+    /** Loader settings for [web-ifc](https://github.com/ThatOpen/engine_web-ifc). */
+    webIfc: WEBIFC.LoaderSettings;
+    /**
+     * Whether to automatically set the path to the WASM file for [web-ifc](https://github.com/ThatOpen/engine_web-ifc).
+     * If set to true, the path will be set to the default path of the WASM file.
+     * If set to false, the path must be provided manually in the 'wasm.path' property.
+     * Default value is true.
+     */
+    autoSetWasm: boolean;
+    /**
+     * Custom function to handle the file location for [web-ifc](https://github.com/ThatOpen/engine_web-ifc).
+     * This function will be called when [web-ifc](https://github.com/ThatOpen/engine_web-ifc) needs to locate a file.
+     * If set to null, the default file location handler will be used.
+     *
+     * @param url - The URL of the file to locate.
+     * @returns The absolute path of the file.
+     */
+    customLocateFileHandler: WEBIFC.LocateFileHandlerFn | null;
+}
+import { SimplePlane } from "../../Clipper";
+import { DataSet } from "../../Types";
+export interface ViewpointCamera {
+    direction: {
+        x: number;
+        y: number;
+        z: number;
+    };
+    position: {
+        x: number;
+        y: number;
+        z: number;
+    };
+    aspectRatio: number;
+}
+export interface ViewpointPerspectiveCamera extends ViewpointCamera {
+    fov: number;
+}
+export interface ViewpointOrthographicCamera extends ViewpointCamera {
+    viewToWorldScale: number;
+}
 /**
- * A class representing a 2D minimap of a 3D world.
+ * Represents a viewpoint in a BCF file.
  */
-export declare class MiniMap implements Resizeable, Updateable, Disposable, Configurable<MiniMapConfigManager, MiniMapConfig> {
-    /** {@link Disposable.onDisposed} */
-    readonly onDisposed: Event<unknown>;
-    /** {@link Updateable.onAfterUpdate} */
-    readonly onAfterUpdate: Event<unknown>;
-    /** {@link Updateable.onBeforeUpdate} */
-    readonly onBeforeUpdate: Event<unknown>;
-    /** {@link Resizeable.onResize} */
-    readonly onResize: Event<THREE.Vector2>;
-    /** {@link Configurable.onSetup} */
-    readonly onSetup: Event<unknown>;
-    /**
-     * The front offset of the minimap.
-     * It determines how much the minimap's view is offset from the camera's view.
-     * By pushing the map to the front, what the user sees on screen corresponds with what they see on the map
-     */
-    frontOffset: number;
-    /**
-     * The override material for the minimap.
-     * It is used to render the depth information of the world onto the minimap.
-     */
-    overrideMaterial: THREE.MeshDepthMaterial;
-    /**
-     * The background color of the minimap.
-     * It is used to set the background color of the minimap's renderer.
-     */
-    backgroundColor: THREE.Color;
-    /**
-     * The WebGL renderer for the minimap.
-     * It is used to render the minimap onto the screen.
-     */
-    renderer: THREE.WebGLRenderer;
-    /**
-     * A flag indicating whether the minimap is enabled.
-     * If disabled, the minimap will not update or render.
-     */
-    enabled: boolean;
-    /**
-     * The world in which the minimap is displayed.
-     * It provides access to the 3D scene, camera, and other relevant world elements.
-     */
-    world: World;
-    /** {@link Configurable.config} */
-    config: MiniMapConfigManager;
-    /** {@link Configurable.isSetup} */
-    isSetup: boolean;
-    protected _defaultConfig: MiniMapConfig;
-    private _lockRotation;
-    private _size;
-    private _camera;
-    private _plane;
-    private _tempVector1;
-    private _tempVector2;
-    private _tempTarget;
-    private readonly down;
-    /**
-     * Gets or sets whether the minimap rotation is locked.
-     * When rotation is locked, the minimap will always face the same direction as the camera.
-     */
-    get lockRotation(): boolean;
-    /**
-     * Sets whether the minimap rotation is locked.
-     * When rotation is locked, the minimap will always face the same direction as the camera.
-     * @param active - If 'true', rotation is locked. If 'false', rotation is not locked.
-     */
-    set lockRotation(active: boolean);
-    /**
-     * Gets the current zoom level of the minimap.
-     * The zoom level determines how much of the world is visible on the minimap.
-     * @returns The current zoom level of the minimap.
-     */
-    get zoom(): number;
-    /**
-     * Sets the zoom level of the minimap.
-     * The zoom level determines how much of the world is visible on the minimap.
-     * @param value - The new zoom level of the minimap.
-     */
-    set zoom(value: number);
-    constructor(world: World, components: Components);
-    /** {@link Disposable.dispose} */
-    dispose(): void;
-    /** Returns the camera used by the MiniMap */
-    get(): THREE.OrthographicCamera;
-    /** {@link Updateable.update} */
-    update(): void;
-    /** {@link Resizeable.getSize} */
-    getSize(): THREE.Vector2;
-    /** {@link Resizeable.resize} */
-    resize(size?: THREE.Vector2): void;
-    /** {@link Configurable.setup} */
-    setup(config?: Partial<MiniMapConfig>): void;
-    private updatePlanes;
+export interface BCFViewpoint {
+    title?: string;
+    guid: string;
+    camera: ViewpointPerspectiveCamera | ViewpointOrthographicCamera;
+    selectionComponents: Iterable<string>;
+    exceptionComponents: Iterable<string>;
+    clippingPlanes: DataSet<SimplePlane>;
+    spacesVisible: boolean;
+    spaceBoundariesVisible: boolean;
+    openingsVisible: boolean;
+    defaultVisibility: boolean;
+}
+import { ControlsSchema } from "../../Types";
+import { Components } from "../../Components";
+export declare abstract class Configurator<T = any, U extends ControlsSchema = ControlsSchema> {
+    protected abstract _config: U;
+    protected _component: T;
+    name: string;
+    uuid: string;
+    get controls(): U;
+    constructor(component: T, components: Components, name: string, uuid?: string);
+    set(data: Partial<U>): void;
+    export(controls?: ControlsSchema, exported?: any): any;
+    import(exported: any, imported?: any, first?: boolean): void;
 }
 import * as THREE from "three";
 import { BooleanSettingsControl, ColorSettingsControl, NumberSettingControl } from "../../Types";
@@ -3104,1658 +3053,105 @@ export declare class MiniMapConfigManager extends Configurator<MiniMap, MiniMapC
     set backgroundColor(value: THREE.Color);
 }
 export {};
-import { NavigationMode } from "./types";
-import { OrthoPerspectiveCamera } from "../index";
-/**
- * A {@link NavigationMode} that allows first person navigation, simulating FPS video games.
- */
-export declare class FirstPersonMode implements NavigationMode {
-    private camera;
-    /** {@link NavigationMode.enabled} */
-    enabled: boolean;
-    /** {@link NavigationMode.id} */
-    readonly id = "FirstPerson";
-    constructor(camera: OrthoPerspectiveCamera);
-    /** {@link NavigationMode.set} */
-    set(active: boolean): void;
-    private setupFirstPersonCamera;
-}
-import { NavigationMode } from "./types";
-import { OrthoPerspectiveCamera } from "../index";
-/**
- * A {@link NavigationMode} that allows 3D navigation and panning like in many 3D and CAD softwares.
- */
-export declare class OrbitMode implements NavigationMode {
-    camera: OrthoPerspectiveCamera;
-    /** {@link NavigationMode.enabled} */
-    enabled: boolean;
-    /** {@link NavigationMode.id} */
-    readonly id = "Orbit";
-    constructor(camera: OrthoPerspectiveCamera);
-    /** {@link NavigationMode.set} */
-    set(active: boolean): void;
-    private activateOrbitControls;
-}
-import { NavigationMode } from "./types";
-import { OrthoPerspectiveCamera } from "../index";
-/**
- * A {@link NavigationMode} that allows to navigate floorplans in 2D, like many BIM tools.
- */
-export declare class PlanMode implements NavigationMode {
-    private camera;
-    /** {@link NavigationMode.enabled} */
-    enabled: boolean;
-    /** {@link NavigationMode.id} */
-    readonly id = "Plan";
-    private mouseAction1?;
-    private mouseAction2?;
-    private mouseInitialized;
-    private readonly defaultAzimuthSpeed;
-    private readonly defaultPolarSpeed;
-    constructor(camera: OrthoPerspectiveCamera);
-    /** {@link NavigationMode.set} */
-    set(active: boolean): void;
-}
 import * as THREE from "three";
-import { CameraProjection } from "./types";
-import { Event } from "../../Types";
-import { OrthoPerspectiveCamera } from "../index";
-/**
- * Object to control the {@link CameraProjection} of the {@link OrthoPerspectiveCamera}.
- */
-export declare class ProjectionManager {
-    /**
-     * Event that fires when the {@link CameraProjection} changes.
-     */
-    readonly onChanged: Event<THREE.PerspectiveCamera | THREE.OrthographicCamera>;
-    /**
-     * Current projection mode of the camera.
-     * Default is "Perspective".
-     */
-    current: CameraProjection;
-    /**
-     * The camera controlled by this ProjectionManager.
-     * It can be either a PerspectiveCamera or an OrthographicCamera.
-     */
-    camera: THREE.PerspectiveCamera | THREE.OrthographicCamera;
-    /** Match Ortho zoom with Perspective distance when changing projection mode */
-    matchOrthoDistanceEnabled: boolean;
-    private _component;
-    private _previousDistance;
-    constructor(camera: OrthoPerspectiveCamera);
-    /**
-     * Sets the {@link CameraProjection} of the {@link OrthoPerspectiveCamera}.
-     *
-     * @param projection - the new projection to set. If it is the current projection,
-     * it will have no effect.
-     */
-    set(projection: CameraProjection): Promise<void>;
-    /**
-     * Changes the current {@link CameraProjection} from Ortographic to Perspective
-     * and vice versa.
-     */
-    toggle(): Promise<void>;
-    private setOrthoCamera;
-    private getPerspectiveDims;
-    private setupOrthoCamera;
-    private getDistance;
-    private setPerspectiveCamera;
-}
-/**
- * The projection system of the camera.
- */
-export type CameraProjection = "Perspective" | "Orthographic";
-/**
- * The extensible list of supported navigation modes.
- */
-export type NavModeID = "Orbit" | "FirstPerson" | "Plan";
-/**
- * An object that determines the behavior of the camera controls and the user input (e.g. 2D floor plan mode, first person mode, etc).
- */
-export interface NavigationMode {
-    /** The unique ID of this navigation mode. */
-    id: NavModeID;
-    /**
-     * Enable or disable this navigation mode.
-     * When a new navigation mode is enabled, the previous navigation mode
-     * must be disabled.
-     *
-     * @param active - whether to enable or disable this mode.
-     * @param options - any additional data required to enable or disable it.
-     * */
-    set: (active: boolean, options?: any) => void;
-    /** Whether this navigation mode is active or not. */
-    enabled: boolean;
-}
-import * as THREE from "three";
+import { Resizeable, Updateable, World, Event, Disposable, Configurable } from "../../Types";
+import { MiniMapConfig, MiniMapConfigManager } from "./mini-map-config";
 import { Components } from "../../Components";
-import { AsyncEvent, Configurable, Event, World } from "../../Types";
-import { CullerRendererConfig, CullerRendererConfigManager } from "./culler-renderer-config";
 /**
- * A base renderer to determine visibility on screen.
+ * A class representing a 2D minimap of a 3D world.
  */
-export declare class CullerRenderer implements Configurable<CullerRendererConfigManager, CullerRendererConfig> {
-    /** {@link Configurable.onSetup} */
-    readonly onSetup: Event<unknown>;
-    /** {@link Disposable.onDisposed} */
-    readonly onDisposed: Event<string>;
-    /**
-     * Fires after making the visibility check to the meshes. It lists the
-     * meshes that are currently visible, and the ones that were visible
-     * just before but not anymore.
-     */
-    readonly onViewUpdated: Event<any> | AsyncEvent<any>;
-    /**
-     * Whether this renderer is active or not. If not, it won't render anything.
-     */
-    enabled: boolean;
-    /**
-     * Needs to check whether there are objects that need to be hidden or shown.
-     * You can bind this to the camera movement, to a certain interval, etc.
-     */
-    needsUpdate: boolean;
-    /** The components instance to which this renderer belongs. */
-    components: Components;
-    /** The render target used to render the visibility scene. */
-    renderTarget: THREE.WebGLRenderTarget<THREE.Texture>;
-    /**
-     * The size of the buffer where the result of the visibility check is stored.
-     */
-    bufferSize: number;
-    /**
-     * The buffer when the result of the visibility check is stored.
-     */
-    buffer: Uint8Array;
-    /**
-     * Flag to indicate if the renderer shouldn't update the visibility.
-     */
-    preventUpdate: boolean;
-    /** {@link Configurable.config} */
-    config: CullerRendererConfigManager;
-    /** {@link Configurable.isSetup} */
-    isSetup: boolean;
-    /** The world instance to which this renderer belongs. */
-    readonly world: World;
-    /** The THREE.js renderer used to make the visibility test. */
-    readonly renderer: THREE.WebGLRenderer;
-    protected _defaultConfig: CullerRendererConfig;
-    protected readonly worker: Worker;
-    protected readonly scene: THREE.Scene;
-    private _availableColor;
-    protected _isWorkerBusy: boolean;
-    constructor(components: Components, world: World);
-    /** {@link Disposable.dispose} */
-    dispose(): void;
-    /**
-     * The function that the culler uses to reprocess the scene. Generally it's
-     * better to call needsUpdate, but you can also call this to force it.
-     * @param force if true, it will refresh the scene even if needsUpdate is
-     * not true.
-     */
-    updateVisibility: (force?: boolean) => Promise<void>;
-    setup(config?: Partial<CullerRendererConfig>): void;
-    protected getAvailableColor(): {
-        r: number;
-        g: number;
-        b: number;
-        code: string;
-    };
-    protected increaseColor(): void;
-    protected decreaseColor(): void;
-}
-import * as THREE from "three";
-import { CullerRenderer } from "./culler-renderer";
-import { Components } from "../../Components";
-import { Event, World, Disposable } from "../../Types";
-/**
- * A renderer to hide/show meshes depending on their visibility from the user's point of view.
- */
-export declare class MeshCullerRenderer extends CullerRenderer implements Disposable {
-    /**
-     * Event triggered when the visibility of meshes is updated.
-     * Contains two sets: seen and unseen.
-     */
-    readonly onViewUpdated: Event<{
-        seen: Set<THREE.Mesh>;
-        unseen: Set<THREE.Mesh>;
-    }>;
-    /**
-     * Map of color code to THREE.InstancedMesh.
-     * Used to keep track of color-coded meshes.
-     */
-    colorMeshes: Map<string, THREE.InstancedMesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.Material | THREE.Material[]>>;
-    /**
-     * @deprecated use config.threshold instead.
-     */
-    get threshold(): number;
-    /**
-     * @deprecated use config.threshold instead.
-     */
-    set threshold(value: number);
-    private _colorCodeMeshMap;
-    private _meshIDColorCodeMap;
-    private _currentVisibleMeshes;
-    private _recentlyHiddenMeshes;
-    private readonly _transparentMat;
-    constructor(components: Components, world: World);
-    /** {@link Disposable.dispose} */
-    dispose(): void;
-    /**
-     * Adds a mesh to the culler. When the mesh is not visibile anymore, it will be removed from the scene. When it's visible again, it will be added to the scene.
-     * @param mesh - The mesh to add. It can be a regular THREE.Mesh or an instance of THREE.InstancedMesh.
-     */
-    add(mesh: THREE.Mesh | THREE.InstancedMesh): void;
-    /**
-     * Removes a mesh from the culler, so its visibility is not controlled by the culler anymore.
-     * When the mesh is removed, it will be hidden from the scene and its color-coded mesh will be destroyed.
-     * @param mesh - The mesh to remove. It can be a regular THREE.Mesh or an instance of THREE.InstancedMesh.
-     */
-    remove(mesh: THREE.Mesh | THREE.InstancedMesh): void;
-    /**
-     * Updates the given instanced meshes inside the culler. You should use this if you change the count property, e.g. when changing the visibility of fragments.
-     *
-     * @param meshes - The meshes to update.
-     *
-     * @returns {void}
-     */
-    updateInstanced(meshes: Iterable<THREE.InstancedMesh>): void;
-    private handleWorkerMessage;
-    private getAvailableMaterial;
-}
-export declare function readPixelsAsync(gl: WebGL2RenderingContext, x: number, y: number, w: number, h: number, format: any, type: any, dest: ArrayBufferView): Promise<ArrayBufferView>;
-import * as THREE from "three";
-import { Hideable, Event, World, Disposable, Configurable } from "../../Types";
-import { Components } from "../../Components";
-import { SimpleGridConfig, SimpleGridConfigManager } from "./simple-grid-config";
-/**
- * An infinite grid. Created by [fyrestar](https://github.com/Fyrestar/THREE.InfiniteGridHelper) and translated to typescript by [dkaraush](https://github.com/dkaraush/THREE.InfiniteGridHelper/blob/master/InfiniteGridHelper.ts).
- */
-export declare class SimpleGrid implements Hideable, Disposable, Configurable<SimpleGridConfigManager, SimpleGridConfig> {
+export declare class MiniMap implements Resizeable, Updateable, Disposable, Configurable<MiniMapConfigManager, MiniMapConfig> {
     /** {@link Disposable.onDisposed} */
     readonly onDisposed: Event<unknown>;
-    /** {@link Configurable.onSetup} */
-    readonly onSetup: Event<unknown>;
-    /** {@link Configurable.isSetup} */
-    isSetup: boolean;
-    /** The world instance to which this Raycaster belongs. */
-    world: World;
-    /** The components instance to which this grid belongs. */
-    components: Components;
-    /** {@link Configurable.config} */
-    config: SimpleGridConfigManager;
-    protected _defaultConfig: SimpleGridConfig;
-    /** {@link Hideable.visible} */
-    get visible(): boolean;
-    /** {@link Hideable.visible} */
-    set visible(visible: boolean);
-    /** The material of the grid. */
-    get material(): THREE.ShaderMaterial;
-    /**
-     * Whether the grid should fade away with distance. Recommended to be true for
-     * perspective cameras and false for orthographic cameras.
-     */
-    get fade(): boolean;
-    /**
-     * Whether the grid should fade away with distance. Recommended to be true for
-     * perspective cameras and false for orthographic cameras.
-     */
-    set fade(active: boolean);
-    /** The Three.js mesh that contains the infinite grid. */
-    readonly three: THREE.Mesh;
-    private _fade;
-    constructor(components: Components, world: World);
-    /** {@link Configurable.setup} */
-    setup(config?: Partial<SimpleGridConfig>): void;
-    /** {@link Disposable.dispose} */
-    dispose(): void;
-    private setupEvents;
-    private updateZoom;
-}
-import * as THREE from "three";
-import { BooleanSettingsControl, ColorSettingsControl, NumberSettingControl } from "../../Types";
-import { Configurator } from "../../ConfigManager";
-import { SimpleGrid } from "./simple-grid";
-type SimpleGridConfigType = {
-    visible: BooleanSettingsControl;
-    color: ColorSettingsControl;
-    primarySize: NumberSettingControl;
-    secondarySize: NumberSettingControl;
-    distance: NumberSettingControl;
-};
-/**
- * Configuration interface for the {@link SimpleGrid}.
- */
-export interface SimpleGridConfig {
-    /**
-     * Whether the grid is visible or not.
-     */
-    visible: boolean;
-    /**
-     * The color of the grid lines.
-     */
-    color: THREE.Color;
-    /**
-     * The size of the primary grid lines.
-     */
-    primarySize: number;
-    /**
-     * The size of the secondary grid lines.
-     */
-    secondarySize: number;
-    /**
-     * The distance at which the grid lines start to fade away.
-     */
-    distance: number;
-}
-export declare class SimpleGridConfigManager extends Configurator<SimpleGrid, SimpleGridConfigType> {
-    protected _config: SimpleGridConfigType;
-    /**
-     * Whether the grid is visible or not.
-     */
-    get visible(): boolean;
-    /**
-     * Whether the grid is visible or not.
-     */
-    set visible(value: boolean);
-    /**
-     * The color of the grid lines.
-     */
-    get color(): THREE.Color;
-    /**
-     * The color of the grid lines.
-     */
-    set color(value: THREE.Color);
-    /**
-     * The size of the primary grid lines.
-     */
-    get primarySize(): number;
-    /**
-     * The size of the primary grid lines.
-     */
-    set primarySize(value: number);
-    /**
-     * The size of the secondary grid lines.
-     */
-    get secondarySize(): number;
-    /**
-     * The size of the secondary grid lines.
-     */
-    set secondarySize(value: number);
-    /**
-     * The distance at which the grid lines start to fade away.
-     */
-    get distance(): number;
-    /**
-     * The distance at which the grid lines start to fade away.
-     */
-    set distance(value: number);
-}
-export {};
-import * as THREE from "three";
-import * as WEBIFC from "web-ifc";
-import * as FRAGS from "@thatopen/fragments";
-export declare class CivilReader {
-    defLineMat: THREE.LineBasicMaterial;
-    read(webIfc: WEBIFC.IfcAPI): {
-        alignments: Map<number, FRAGS.Alignment>;
-        coordinationMatrix: THREE.Matrix4;
-    } | undefined;
-    get(civilItems: any): {
-        alignments: Map<number, FRAGS.Alignment>;
-        coordinationMatrix: THREE.Matrix4;
-    } | undefined;
-    private getCurves;
-}
-import * as WEBIFC from "web-ifc";
-export declare class IfcMetadataReader {
-    getNameInfo(webIfc: WEBIFC.IfcAPI): Record<string, any>;
-    getDescriptionInfo(webIfc: WEBIFC.IfcAPI): Record<string, any>;
-}
-import { ControlsSchema } from "../../Types";
-import { Components } from "../../Components";
-export declare abstract class Configurator<T = any, U extends ControlsSchema = ControlsSchema> {
-    protected abstract _config: U;
-    protected _component: T;
-    name: string;
-    uuid: string;
-    get controls(): U;
-    constructor(component: T, components: Components, name: string, uuid?: string);
-    set(data: Partial<U>): void;
-    export(controls?: ControlsSchema, exported?: any): any;
-    import(exported: any, imported?: any, first?: boolean): void;
-}
-import * as THREE from "three";
-import { Disposable, Event } from "../../Types";
-/**
- * A helper to easily get the real position of the mouse in the Three.js canvas to work with tools like the [raycaster](https://threejs.org/docs/#api/en/core/Raycaster), even if it has been transformed through CSS or doesn't occupy the whole screen.
- */
-export declare class Mouse implements Disposable {
-    dom: HTMLCanvasElement;
-    private _event?;
-    private _position;
-    /** {@link Disposable.onDisposed} */
-    readonly onDisposed: Event<unknown>;
-    constructor(dom: HTMLCanvasElement);
-    /**
-     * The real position of the mouse of the Three.js canvas.
-     */
-    get position(): THREE.Vector2;
-    /** {@link Disposable.dispose} */
-    dispose(): void;
-    private getPositionY;
-    private getPositionX;
-    private updateMouseInfo;
-    private getDataObject;
-    private setupEvents;
-}
-import * as THREE from "three";
-import { Components } from "../../Components";
-import { Event, World, Disposable } from "../../Types";
-import { Mouse } from "./mouse";
-/**
- * A simple [raycaster](https://threejs.org/docs/#api/en/core/Raycaster) that allows to easily get items from the scene using the mouse and touch events.
- */
-export declare class SimpleRaycaster implements Disposable {
-    /** {@link Component.enabled} */
-    enabled: boolean;
-    /** The components instance to which this Raycaster belongs. */
-    components: Components;
-    /** {@link Disposable.onDisposed} */
-    readonly onDisposed: Event<unknown>;
-    /** The position of the mouse in the screen. */
-    readonly mouse: Mouse;
-    /**
-     * A reference to the Three.js Raycaster instance.
-     * This is used for raycasting operations.
-     */
-    readonly three: THREE.Raycaster;
-    /**
-     * A reference to the world instance to which this Raycaster belongs.
-     * This is used to access the camera and meshes.
-     */
-    world: World;
-    constructor(components: Components, world: World);
-    /** {@link Disposable.dispose} */
-    dispose(): void;
-    /**
-     * Throws a ray from the camera to the mouse or touch event point and returns
-     * the first item found. This also takes into account the clipping planes
-     * used by the renderer.
-     *
-     * @param items - the [meshes](https://threejs.org/docs/#api/en/objects/Mesh)
-     * to query. If not provided, it will query all the meshes stored in
-     * {@link Components.meshes}.
-     * @param position - the screen position to use for raycasting. If not provided,
-     * the last pointer (mouse/touch) position will be used.
-     */
-    castRay(items?: THREE.Object3D[], position?: THREE.Vector2): THREE.Intersection | null;
-    /**
-     * Casts a ray from a given origin in a given direction and returns the first item found.
-     * This method also takes into account the clipping planes used by the renderer.
-     *
-     * @param origin - The origin of the ray.
-     * @param direction - The direction of the ray.
-     * @param items - The meshes to query. If not provided, it will query all the meshes stored in {@link World.meshes}.
-     * @returns The first intersection found or 'null' if no intersection was found.
-     */
-    castRayFromVector(origin: THREE.Vector3, direction: THREE.Vector3, items?: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.Material | THREE.Material[], THREE.Object3DEventMap>[]): THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>> | null;
-    private intersect;
-    private filterClippingPlanes;
-}
-/**
- * Simple event handler by [Jason Kleban](https://gist.github.com/JasonKleban/50cee44960c225ac1993c922563aa540). Keep in mind that if you want to remove it later, you might want to declare the callback as an object. If you want to maintain the reference to 'this', you will need to declare the callback as an arrow function.
- */
-export declare class Event<T> {
-    /**
-     * Whether this event is active or not. If not, it won't trigger.
-     */
-    enabled: boolean;
-    /**
-     * Add a callback to this event instance.
-     * @param handler - the callback to be added to this event.
-     */
-    add(handler: T extends void ? {
-        (): void;
-    } : {
-        (data: T): void;
-    }): void;
-    /**
-     * Removes a callback from this event instance.
-     * @param handler - the callback to be removed from this event.
-     */
-    remove(handler: T extends void ? {
-        (): void;
-    } : {
-        (data: T): void;
-    }): void;
-    /** Triggers all the callbacks assigned to this event. */
-    trigger: (data?: T) => void;
-    /** Gets rid of all the suscribed events. */
-    reset(): void;
-    private handlers;
-}
-/**
- * Simple event handler by [Jason Kleban](https://gist.github.com/JasonKleban/50cee44960c225ac1993c922563aa540). Keep in mind that if you want to remove it later, you might want to declare the callback as an object. If you want to maintain the reference to 'this', you will need to declare the callback as an arrow function.
- */
-export declare class AsyncEvent<T> {
-    /**
-     * Whether this event is active or not. If not, it won't trigger.
-     */
-    enabled: boolean;
-    /**
-     * Add a callback to this event instance.
-     * @param handler - the callback to be added to this event.
-     */
-    add(handler: T extends void ? {
-        (): Promise<void>;
-    } : {
-        (data: T): Promise<void>;
-    }): void;
-    /**
-     * Removes a callback from this event instance.
-     * @param handler - the callback to be removed from this event.
-     */
-    remove(handler: T extends void ? {
-        (): Promise<void>;
-    } : {
-        (data: T): Promise<void>;
-    }): void;
-    /** Triggers all the callbacks assigned to this event. */
-    trigger: (data?: T) => Promise<void>;
-    /** Gets rid of all the suscribed events. */
-    reset(): void;
-    private handlers;
-}
-import * as THREE from "three";
-import CameraControls from "camera-controls";
-import { Event } from "./event";
-import { EventManager } from "./event-manager";
-/**
- * Whether this component has to be manually destroyed once you are done with it to prevent [memory leaks](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects). This also ensures that the DOM events created by that component will be cleaned up.
- */
-export interface Disposable {
-    /**
-     * Destroys the object from memory to prevent a
-     * [memory leak](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
-     */
-    dispose: () => void | Promise<void>;
-    /** Fired after the tool has been disposed.  */
-    readonly onDisposed: Event<any>;
-}
-/**
- * Whether the geometric representation of this component can be hidden or shown in the [Three.js scene](https://threejs.org/docs/#api/en/scenes/Scene).
- */
-export interface Hideable {
-    /**
-     * Whether the geometric representation of this component is
-     * currently visible or not in the
-     * [Three.js scene](https://threejs.org/docs/#api/en/scenes/Scene).
-     */
-    visible: boolean;
-}
-/**
- * Whether this component can be resized. The meaning of this can vary depending on the component: resizing a [Renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer) component could mean changing its resolution, whereas resizing a [Mesh](https://threejs.org/docs/#api/en/objects/Mesh) would change its scale.
- */
-export interface Resizeable {
-    /**
-     * Sets size of this component (e.g. the resolution of a
-     * [Renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
-     * component.
-     */
-    resize: (size?: THREE.Vector2) => void;
-    /** Event that fires when the component has been resized. */
-    onResize: Event<THREE.Vector2>;
-    /**
-     * Gets the current size of this component (e.g. the resolution of a
-     * [Renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
-     * component.
-     */
-    getSize: () => THREE.Vector2;
-}
-/** Whether this component should be updated each frame. */
-export interface Updateable {
-    /** Actions that should be executed after updating the component. */
-    onAfterUpdate: Event<any>;
-    /** Actions that should be executed before updating the component. */
-    onBeforeUpdate: Event<any>;
-    /**
-     * Function used to update the state of this component each frame. For
-     * instance, a renderer component will make a render each frame.
-     */
-    update(delta?: number): void;
-}
-/** Basic type to describe the progress of any kind of process. */
-export interface Progress {
-    /** The amount of things that have been done already. */
-    current: number;
-    /** The total amount of things to be done by the process. */
-    total: number;
-}
-/**
- * Whether this component supports create and destroy operations. This generally applies for components that work with instances, such as clipping planes or dimensions.
- */
-export interface Createable {
-    /** Creates a new instance of an element (e.g. a new Dimension). */
-    create: (data: any) => void;
-    /**
-     * Finish the creation process of the component, successfully creating an
-     * instance of whatever the component creates.
-     */
-    endCreation?: (data: any) => void;
-    /**
-     * Cancels the creation process of the component, going back to the state
-     * before starting to create.
-     */
-    cancelCreation?: (data: any) => void;
-    /** Deletes an existing instance of an element (e.g. a Dimension). */
-    delete: (data: any) => void;
-}
-/**
- * Whether this component supports to be configured.
- */
-export interface Configurable<T, U> {
-    /** Wether this components has been already configured. */
-    isSetup: boolean;
-    /** Use the provided configuration to set up the tool. */
-    setup: (config?: Partial<U>) => void | Promise<void>;
-    /** Fired after successfully calling {@link Configurable.setup()}  */
-    readonly onSetup: Event<any>;
-    /** Object holding the tool configuration. You can edit this directly to change the object.
-     */
-    config: Required<T>;
-}
-/**
- * Whether a camera uses the Camera Controls library.
- */
-export interface CameraControllable {
-    /**
-     * An instance of CameraControls that provides camera control functionalities.
-     * This instance is used to manipulate the camera.
-     */
-    controls: CameraControls;
-}
-/**
- * Whether it has events or not.
- */
-export interface Eventable {
-    /**
-     * The object in charge of managing all the events.
-     */
-    eventManager: EventManager;
-}
-import { Base } from "./base";
-/**
- * Components are the building blocks of this library. Components are singleton elements that contain specific functionality. For instance, the Clipper Component can create, delete and handle 3D clipping planes. Components must be unique (they can't be instanced more than once per Components instance), and have a static UUID that identifies them uniquely. The can be accessed globally using the {@link Components} instance.
- */
-export declare abstract class Component extends Base {
-    /**
-     * Whether this component is active or not. The behaviour can vary depending
-     * on the type of component. E.g. a disabled dimension tool will stop creating
-     * dimensions, while a disabled camera will stop moving. A disabled component
-     * will not be updated automatically each frame.
-     */
-    abstract enabled: boolean;
-}
-import { Disposable, Hideable, Resizeable, Updateable, Configurable } from "./interfaces";
-import { Components } from "../../Components";
-/**
- * Base class of the library. Useful for finding out the interfaces something implements.
- */
-export declare abstract class Base {
-    components: Components;
-    constructor(components: Components);
-    /** Whether is component is {@link Disposable}. */
-    isDisposeable: () => this is Disposable;
-    /** Whether is component is {@link Resizeable}. */
-    isResizeable: () => this is Resizeable;
-    /** Whether is component is {@link Updateable}. */
-    isUpdateable: () => this is Updateable;
-    /** Whether is component is {@link Hideable}. */
-    isHideable: () => this is Hideable;
-    /** Whether is component is {@link Configurable}. */
-    isConfigurable: () => this is Configurable<any, any>;
-}
-import { Base } from "./base";
-import { World } from "./world";
-import { Event } from "./event";
-import { Components } from "../../Components";
-/**
- * One of the elements that make a world. It can be either a scene, a camera or a renderer.
- */
-export declare abstract class BaseWorldItem extends Base {
-    readonly worlds: Map<string, World>;
-    /**
-     * Event that is triggered when a world is added or removed from the 'worlds' map.
-     * The event payload contains the world instance and the action ("added" or "removed").
-     */
-    readonly onWorldChanged: Event<{
-        world: World;
-        action: "added" | "removed";
-    }>;
-    /**
-     * The current world this item is associated with. It can be null if no world is currently active.
-     */
-    currentWorld: World | null;
-    protected constructor(components: Components);
-}
-import * as THREE from "three";
-import CameraControls from "camera-controls";
-import { BaseWorldItem } from "./base-world-item";
-import { CameraControllable } from "./interfaces";
-/**
- * Abstract class representing a camera in a 3D world. All cameras should use this class as a base.
- */
-export declare abstract class BaseCamera extends BaseWorldItem {
-    /**
-     * Whether the camera is enabled or not.
-     */
-    abstract enabled: boolean;
-    /**
-     * The Three.js camera instance.
-     */
-    abstract three: THREE.Camera;
-    /**
-     * Optional CameraControls instance for controlling the camera.
-     * This property is only available if the camera is controllable.
-     */
-    abstract controls?: CameraControls;
-    /**
-     * Checks whether the instance is {@link CameraControllable}.
-     *
-     * @returns True if the instance is controllable, false otherwise.
-     */
-    hasCameraControls: () => this is CameraControllable;
-}
-import * as THREE from "three";
-import { Vector2 } from "three";
-import { Event } from "./event";
-import { BaseWorldItem } from "./base-world-item";
-import { Disposable, Resizeable, Updateable } from "./interfaces";
-/**
- * Abstract class representing a renderer for a 3D world. All renderers should use this class as a base.
- */
-export declare abstract class BaseRenderer extends BaseWorldItem implements Updateable, Disposable, Resizeable {
-    /**
-     * The three.js WebGLRenderer instance associated with this renderer.
-     *
-     * @abstract
-     * @type {THREE.WebGLRenderer}
-     */
-    abstract three: THREE.WebGLRenderer;
-    /** {@link Updateable.onBeforeUpdate} */
-    onAfterUpdate: Event<unknown>;
-    /** {@link Updateable.onAfterUpdate} */
-    onBeforeUpdate: Event<unknown>;
-    /** {@link Disposable.onDisposed} */
-    readonly onDisposed: Event<undefined>;
-    /** {@link Resizeable.onResize} */
-    readonly onResize: Event<THREE.Vector2>;
-    /**
-     * Event that fires when there has been a change to the list of clipping
-     * planes used by the active renderer.
-     */
-    readonly onClippingPlanesUpdated: Event<unknown>;
-    /** {@link Updateable.update} */
-    abstract update(delta?: number): void | Promise<void>;
-    /** {@link Disposable.dispose} */
-    abstract dispose(): void;
-    /** {@link Resizeable.getSize} */
-    abstract getSize(): Vector2;
-    /** {@link Resizeable.resize} */
-    abstract resize(size: Vector2 | undefined): void;
-    /**
-     * The list of [clipping planes](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.clippingPlanes) used by this instance of the renderer.
-     */
-    clippingPlanes: THREE.Plane[];
-    /**
-     * Updates the clipping planes and triggers the 'onClippingPlanesUpdated' event.
-     *
-     * @remarks
-     * This method is typically called when there is a change to the list of clipping planes
-     * used by the active renderer.
-     */
-    updateClippingPlanes(): void;
-    /**
-     * Sets or removes a clipping plane from the renderer.
-     *
-     * @param active - A boolean indicating whether the clipping plane should be active or not.
-     * @param plane - The clipping plane to be added or removed.
-     * @param isLocal - An optional boolean indicating whether the clipping plane is local to the object. If not provided, it defaults to 'false'.
-     *
-     * @remarks
-     * This method adds or removes a clipping plane from the 'clippingPlanes' array.
-     * If 'active' is 'true' and the plane is not already in the array, it is added.
-     * If 'active' is 'false' and the plane is in the array, it is removed.
-     * The 'three.clippingPlanes' property is then updated to reflect the current state of the 'clippingPlanes' array,
-     * excluding any planes marked as local.
-     */
-    setPlane(active: boolean, plane: THREE.Plane, isLocal?: boolean): void;
-}
-import * as THREE from "three";
-import { Disposable } from "./interfaces";
-import { Event } from "./event";
-import { Components } from "../../Components";
-import { BaseWorldItem } from "./base-world-item";
-/**
- * Abstract class representing a base scene in the application. All scenes should use this class as a base.
- */
-export declare abstract class BaseScene extends BaseWorldItem implements Disposable {
-    /** {@link Disposable.onDisposed} */
-    readonly onDisposed: Event<unknown>;
-    /**
-     * Abstract property representing the three.js object associated with this scene.
-     * It should be implemented by subclasses.
-     */
-    abstract three: THREE.Object3D;
-    /** The set of directional lights managed by this scene component. */
-    directionalLights: Map<string, THREE.DirectionalLight>;
-    /** The set of ambient lights managed by this scene component. */
-    ambientLights: Map<string, THREE.AmbientLight>;
-    protected constructor(components: Components);
-    /** {@link Disposable.dispose} */
-    dispose(): void;
-    deleteAllLights(): void;
-}
-import * as THREE from "three";
-import { BaseScene } from "./base-scene";
-import { BaseCamera } from "./base-camera";
-import { BaseRenderer } from "./base-renderer";
-import { Updateable, Disposable } from "./interfaces";
-/**
- * Represents a 3D world with meshes, scene, camera, renderer, and other properties.
- */
-export interface World extends Disposable, Updateable {
-    /**
-     * A set of meshes present in the world. This is taken into account for operations like raycasting.
-     */
-    meshes: Set<THREE.Mesh>;
-    /**
-     * The base scene of the world.
-     */
-    scene: BaseScene;
-    /**
-     * The base camera of the world.
-     */
-    camera: BaseCamera;
-    /**
-     * The base renderer of the world. Can be null if this world doesn't use a renderer (e.g. in a backend environment).
-     */
-    renderer: BaseRenderer | null;
-    /**
-     * A unique identifier for the world.
-     */
-    uuid: string;
-    /**
-     * Indicates whether the world is currently disposing. This is useful for cancelling logic that access the elements of a world (which are also disposed).
-     */
-    isDisposing: boolean;
-}
-import { Event } from "./event";
-/**
- * A class that extends the built-in Set class and provides additional functionality. It triggers events when items are added, deleted, or the set is cleared.
- *
- * @template T - The type of elements in the set.
- */
-export declare class DataSet<T> extends Set<T> {
-    /**
-     * An event that is triggered when a new item is added to the set.
-     */
-    readonly onItemAdded: Event<T>;
-    /**
-     * An event that is triggered when an item is deleted from the set.
-     */
-    readonly onItemDeleted: Event<unknown>;
-    /**
-     * An event that is triggered when the set is cleared.
-     */
-    readonly onCleared: Event<unknown>;
-    /**
-     * Constructs a new instance of the DataSet class.
-     *
-     * @param iterable - An optional iterable object to initialize the set with.
-     */
-    constructor(iterable?: Iterable<T> | null);
-    /**
-     * Clears the set and triggers the onCleared event.
-     */
-    clear(): void;
-    /**
-     * Adds one or multiple values to the set and triggers the onItemAdded event per each.
-     *
-     * @param value - The value to add to the set.
-     * @returns - The set instance.
-     */
-    add(...value: T[]): this;
-    /**
-     * A function that acts as a guard for adding items to the set.
-     * It determines whether a given value should be allowed to be added to the set.
-     *
-     * @param value - The value to be checked against the guard.
-     * @returns A boolean indicating whether the value should be allowed to be added to the set.
-     *          By default, this function always returns true, allowing all values to be added.
-     *          You can override this behavior by providing a custom implementation.
-     */
-    guard: (value: T) => boolean;
-    /**
-     * Deletes a value from the set and triggers the onItemDeleted event.
-     *
-     * @param value - The value to delete from the set.
-     * @returns - True if the value was successfully deleted, false otherwise.
-     */
-    delete(value: T): boolean;
-    /**
-     * Clears the set and resets the onItemAdded, onItemDeleted, and onCleared events.
-     */
-    dispose(): void;
-}
-import { Event } from "./event";
-/**
- * A class that extends the built-in Map class and provides additional events for item set, update, delete, and clear operations.
- *
- * @template K - The type of keys in the map.
- * @template V - The type of values in the map.
- */
-export declare class DataMap<K, V> extends Map<K, V> {
-    /**
-     * An event triggered when a new item is set in the map.
-     */
-    readonly onItemSet: Event<{
-        key: K;
-        value: V;
-    }>;
-    /**
-     * An event triggered when an existing item in the map is updated.
-     */
-    readonly onItemUpdated: Event<{
-        key: K;
-        value: V;
-    }>;
-    /**
-     * An event triggered when an item is deleted from the map.
-     */
-    readonly onItemDeleted: Event<K>;
-    /**
-     * An event triggered when the map is cleared.
-     */
-    readonly onCleared: Event<unknown>;
-    /**
-     * Constructs a new DataMap instance.
-     *
-     * @param iterable - An iterable object containing key-value pairs to populate the map.
-     */
-    constructor(iterable?: Iterable<readonly [K, V]> | null | undefined);
-    /**
-     * Clears the map and triggers the onCleared event.
-     */
-    clear(): void;
-    /**
-     * Sets the value for the specified key in the map.
-     * If the item is new, then onItemSet is triggered.
-     * If the item is already in the map, then onItemUpdated is triggered.
-     *
-     * @param key - The key of the item to set.
-     * @param value - The value of the item to set.
-     * @returns The DataMap instance.
-     */
-    set(key: K, value: V): this;
-    /**
-     * A function that acts as a guard for adding items to the set.
-     * It determines whether a given value should be allowed to be added to the set.
-     *
-     * @param key - The key of the entry to be checked against the guard.
-     * @param value - The value of the entry to be checked against the guard.
-     * @returns A boolean indicating whether the value should be allowed to be added to the set.
-     *          By default, this function always returns true, allowing all values to be added.
-     *          You can override this behavior by providing a custom implementation.
-     */
-    guard: (key: K, value: V) => boolean;
-    /**
-     * Deletes the specified key from the map and triggers the onItemDeleted event if the key was found.
-     *
-     * @param key - The key of the item to delete.
-     * @returns True if the key was found and deleted; otherwise, false.
-     */
-    delete(key: K): boolean;
-    /**
-     * Clears the map and resets the events.
-     */
-    dispose(): void;
-}
-import { Component } from "./component";
-import { Configurator } from "../../ConfigManager";
-import { Components } from "../../Components";
-export type ComponentUIElement = {
-    name: string;
-    id: string;
-    icon: string;
-    componentID: string;
-    get: (components: Components) => {
-        element: HTMLElement;
-        config?: Configurator;
-        dispose?: () => void;
-    };
-};
-export declare abstract class ComponentWithUI extends Component {
-    abstract name: string;
-    abstract getUI(): ComponentUIElement[];
-}
-import * as THREE from "three";
-export interface BooleanSettingsControl {
-    type: "Boolean";
-    value: boolean;
-}
-export interface ColorSettingsControl {
-    type: "Color";
-    value: THREE.Color;
-}
-export interface TextSettingsControl {
-    type: "Text";
-    value: string;
-}
-export interface NumberSettingControl {
-    type: "Number";
-    interpolable: boolean;
-    min?: number;
-    max?: number;
-    value: number;
-}
-export interface SelectSettingControl {
-    type: "Select";
-    multiple: boolean;
-    options: Set<string>;
-    value: string;
-}
-export interface Vector3SettingControl {
-    type: "Vector3";
-    value: THREE.Vector3;
-}
-export interface TextSetSettingControl {
-    type: "TextSet";
-    value: Set<string>;
-}
-export interface NoControl {
-    type: "None";
-    value: any;
-}
-export type ControlEntry = BooleanSettingsControl | ColorSettingsControl | TextSettingsControl | NumberSettingControl | SelectSettingControl | Vector3SettingControl | TextSetSettingControl | NoControl;
-export interface ControlsSchema {
-    [name: string]: ControlEntry | ControlsSchema;
-}
-export declare class ControlsUtils {
-    static isEntry(item: any): boolean;
-    static copySchema<T extends ControlsSchema = ControlsSchema>(schema: T, copy?: ControlsSchema): T;
-    static copyEntry(controlEntry: ControlEntry): ControlEntry;
-}
-import { Event } from "./event";
-import { AsyncEvent } from "./async-event";
-/**
- * Simple class to easily toggle and reset event lists.
- */
-export declare class EventManager {
-    /**
-     * The list of events managed by this instance.
-     */
-    list: Set<Event<any> | AsyncEvent<any>>;
-    /**
-     * Adds events to this manager.
-     * @param events the events to add.
-     */
-    add(events: Iterable<Event<any> | AsyncEvent<any>>): void;
-    /**
-     * Removes events from this manager.
-     * @param events the events to remove.
-     */
-    remove(events: Iterable<Event<any> | AsyncEvent<any>>): void;
-    /**
-     * Sets all the events managed by this instance as enabled or disabled.
-     * @param active whether to turn on or off the events.
-     */
-    set(active: boolean): void;
-    /**
-     * Resets all the events managed by this instance.
-     */
-    reset(): void;
-}
-import { IfcFragmentSettings } from "../../IfcLoader/src";
-/**
- * Settings for streaming IFC geometry and assets. Extends {@link IfcFragmentSettings} to inherit common settings.
- */
-export declare class IfcStreamingSettings extends IfcFragmentSettings {
-    /**
-     * Minimum number of geometries to be streamed.
-     * Defaults to 10 geometries.
-     */
-    minGeometrySize: number;
-    /**
-     * Minimum amount of assets to be streamed.
-     * Defaults to 1000 assets.
-     */
-    minAssetsSize: number;
-    /**
-     * Maximum amount of triangles per fragment. Useful for controlling the maximum size of fragment files.
-     */
-    maxTriangles: number | null;
-}
-/**
- * A dictionary of geometries streamed from a server. Each geometry is identified by a unique number (id), and contains information about its bounding box, whether it has holes, and an optional file path for the geometry data.
- */
-export interface StreamedGeometries {
-    [id: number]: {
-        /** The bounding box of the geometry as a Float32Array. */
-        boundingBox: Float32Array;
-        /** A boolean indicating whether the geometry has holes. */
-        hasHoles: boolean;
-        /** An optional file path for the geometry data. */
-        geometryFile?: string;
-    };
-}
-/**
- * A streamed asset, which consists of multiple geometries. Each geometry in the asset is identified by a unique number (geometryID), and contains information about its transformation and color.
- */
-export interface StreamedAsset {
-    /** The unique identifier of the asset. */
-    id: number;
-    /** An array of geometries associated with the asset. */
-    geometries: {
-        /** The unique identifier of the geometry. */
-        geometryID: number;
-        /** The transformation matrix of the geometry as a number array. */
-        transformation: number[];
-        /** The color of the geometry as a number array. */
-        color: number[];
-    }[];
-}
-import * as THREE from "three";
-import { Event, Base, World, BaseScene, BaseCamera, BaseRenderer, Disposable, Updateable } from "../../Types";
-/**
- * A class representing a simple world in a 3D environment. It extends the Base class and implements the World interface.
- *
- * @template T - The type of the scene. Default is BaseScene.
- * @template U - The type of the camera. Default is BaseCamera.
- * @template S - The type of the renderer. Default is BaseRenderer.
- */
-export declare class SimpleWorld<T extends BaseScene = BaseScene, U extends BaseCamera = BaseCamera, S extends BaseRenderer = BaseRenderer> extends Base implements World, Disposable, Updateable {
-    /**
-     * All the loaded [meshes](https://threejs.org/docs/#api/en/objects/Mesh). These meshes will be taken into account in operations like raycasting.
-     */
-    readonly meshes: Set<THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.Material | THREE.Material[], THREE.Object3DEventMap>>;
     /** {@link Updateable.onAfterUpdate} */
     readonly onAfterUpdate: Event<unknown>;
     /** {@link Updateable.onBeforeUpdate} */
     readonly onBeforeUpdate: Event<unknown>;
-    /** {@link Disposable.onDisposed} */
-    readonly onDisposed: Event<unknown>;
-    /**
-     * Indicates whether the world is currently being disposed. This is useful to prevent trying to access world's elements when it's being disposed, which could cause errors when you dispose a world.
-     */
-    isDisposing: boolean;
-    /**
-     * Indicates whether the world is currently enabled.
-     * When disabled, the world will not be updated.
-     */
-    enabled: boolean;
-    /**
-     * A unique identifier for the world. Is not meant to be changed at any moment.
-     */
-    readonly uuid: string;
-    /**
-     * An optional name for the world.
-     */
-    name?: string;
-    private _scene?;
-    private _camera?;
-    private _renderer;
-    /**
-     * Getter for the scene. If no scene is initialized, it throws an error.
-     * @returns The current scene.
-     */
-    get scene(): T;
-    /**
-     * Setter for the scene. It sets the current scene, adds the world to the scene's worlds set,
-     * sets the current world in the scene, and triggers the scene's onWorldChanged event with the added action.
-     * @param scene - The new scene to be set.
-     */
-    set scene(scene: T);
-    /**
-     * Getter for the camera. If no camera is initialized, it throws an error.
-     * @returns The current camera.
-     */
-    get camera(): U;
-    /**
-     * Setter for the camera. It sets the current camera, adds the world to the camera's worlds set,
-     * sets the current world in the camera, and triggers the camera's onWorldChanged event with the added action.
-     * @param camera - The new camera to be set.
-     */
-    set camera(camera: U);
-    /**
-     * Getter for the renderer.
-     * @returns The current renderer or null if no renderer is set. Some worlds don't need a renderer to work (when your mail goal is not to display a 3D viewport to the user).
-     */
-    get renderer(): S | null;
-    /**
-     * Setter for the renderer. It sets the current renderer, adds the world to the renderer's worlds set,
-     * sets the current world in the renderer, and triggers the renderer's onWorldChanged event with the added action.
-     * If a new renderer is set, it also triggers the onWorldChanged event with the removed action for the old renderer.
-     * @param renderer - The new renderer to be set or null to remove the current renderer.
-     */
-    set renderer(renderer: S | null);
-    /** {@link Updateable.update} */
-    update(delta?: number): void;
-    /** {@link Disposable.dispose} */
-    dispose(disposeResources?: boolean): void;
-}
-import * as THREE from "three";
-import { BaseScene, Configurable, Event } from "../../Types";
-import { Components } from "../../Components";
-import { SimpleSceneConfig, SimpleSceneConfigManager } from "./simple-scene-config";
-/**
- * A basic 3D [scene](https://threejs.org/docs/#api/en/scenes/Scene) to add objects hierarchically, and easily dispose them when you are finished with it.
- */
-export declare class SimpleScene extends BaseScene implements Configurable<SimpleSceneConfigManager, SimpleSceneConfig> {
+    /** {@link Resizeable.onResize} */
+    readonly onResize: Event<THREE.Vector2>;
     /** {@link Configurable.onSetup} */
     readonly onSetup: Event<unknown>;
+    /**
+     * The front offset of the minimap.
+     * It determines how much the minimap's view is offset from the camera's view.
+     * By pushing the map to the front, what the user sees on screen corresponds with what they see on the map
+     */
+    frontOffset: number;
+    /**
+     * The override material for the minimap.
+     * It is used to render the depth information of the world onto the minimap.
+     */
+    overrideMaterial: THREE.MeshDepthMaterial;
+    /**
+     * The background color of the minimap.
+     * It is used to set the background color of the minimap's renderer.
+     */
+    backgroundColor: THREE.Color;
+    /**
+     * The WebGL renderer for the minimap.
+     * It is used to render the minimap onto the screen.
+     */
+    renderer: THREE.WebGLRenderer;
+    /**
+     * A flag indicating whether the minimap is enabled.
+     * If disabled, the minimap will not update or render.
+     */
+    enabled: boolean;
+    /**
+     * The world in which the minimap is displayed.
+     * It provides access to the 3D scene, camera, and other relevant world elements.
+     */
+    world: World;
+    /** {@link Configurable.config} */
+    config: MiniMapConfigManager;
     /** {@link Configurable.isSetup} */
     isSetup: boolean;
+    protected _defaultConfig: MiniMapConfig;
+    private _lockRotation;
+    private _size;
+    private _camera;
+    private _plane;
+    private _tempVector1;
+    private _tempVector2;
+    private _tempTarget;
+    private readonly down;
     /**
-     * The underlying Three.js scene object.
-     * It is used to define the 3D space containing objects, lights, and cameras.
+     * Gets or sets whether the minimap rotation is locked.
+     * When rotation is locked, the minimap will always face the same direction as the camera.
      */
-    three: THREE.Scene;
-    /** {@link Configurable.config} */
-    config: SimpleSceneConfigManager;
-    protected _defaultConfig: SimpleSceneConfig;
-    constructor(components: Components);
-    /** {@link Configurable.setup} */
-    setup(config?: Partial<SimpleSceneConfig>): void;
+    get lockRotation(): boolean;
+    /**
+     * Sets whether the minimap rotation is locked.
+     * When rotation is locked, the minimap will always face the same direction as the camera.
+     * @param active - If 'true', rotation is locked. If 'false', rotation is not locked.
+     */
+    set lockRotation(active: boolean);
+    /**
+     * Gets the current zoom level of the minimap.
+     * The zoom level determines how much of the world is visible on the minimap.
+     * @returns The current zoom level of the minimap.
+     */
+    get zoom(): number;
+    /**
+     * Sets the zoom level of the minimap.
+     * The zoom level determines how much of the world is visible on the minimap.
+     * @param value - The new zoom level of the minimap.
+     */
+    set zoom(value: number);
+    constructor(world: World, components: Components);
+    /** {@link Disposable.dispose} */
     dispose(): void;
-}
-import * as THREE from "three";
-import { BaseRenderer, Event } from "../../Types";
-import { Components } from "../../Components";
-/**
- * A basic renderer capable of rendering [Objec3Ds](https://threejs.org/docs/#api/en/core/Object3D).
- */
-export declare class SimpleRenderer extends BaseRenderer {
-    /**
-     * Indicates whether the renderer is enabled. If it's not, it won't be updated.
-     * Default is 'true'.
-     */
-    enabled: boolean;
-    needsUpdate: boolean;
-    /**
-     * The HTML container of the THREE.js canvas where the scene is rendered.
-     */
-    container: HTMLElement;
-    /**
-     * The THREE.js WebGLRenderer instance.
-     */
-    three: THREE.WebGLRenderer;
-    protected _canvas: HTMLCanvasElement;
-    protected _parameters?: Partial<THREE.WebGLRendererParameters>;
-    protected _resizeObserver: ResizeObserver | null;
-    protected onContainerUpdated: Event<unknown>;
-    private _resizing;
-    /**
-     * Constructor for the SimpleRenderer class.
-     *
-     * @param components - The components instance.
-     * @param container - The HTML container where the THREE.js canvas will be rendered.
-     * @param parameters - Optional parameters for the THREE.js WebGLRenderer.
-     */
-    constructor(components: Components, container: HTMLElement, parameters?: Partial<THREE.WebGLRendererParameters>);
+    /** Returns the camera used by the MiniMap */
+    get(): THREE.OrthographicCamera;
     /** {@link Updateable.update} */
     update(): void;
-    /** {@link Disposable.dispose} */
-    dispose(): void;
-    /** {@link Resizeable.getSize}. */
+    /** {@link Resizeable.getSize} */
     getSize(): THREE.Vector2;
     /** {@link Resizeable.resize} */
-    resize: (size?: THREE.Vector2) => void;
-    /**
-     * Sets up and manages the event listeners for the renderer.
-     *
-     * @param active - A boolean indicating whether to activate or deactivate the event listeners.
-     *
-     * @throws Will throw an error if the renderer does not have an HTML container.
-     */
-    setupEvents(active: boolean): void;
-    private resizeEvent;
-    private setupRenderer;
-    private onContextLost;
-    private onContextBack;
-}
-import * as THREE from "three";
-import CameraControls from "camera-controls";
-import { Disposable, Updateable, Event, BaseCamera } from "../../Types";
-import { Components } from "../../Components";
-/**
- * A basic camera that uses [yomotsu's cameracontrols](https://github.com/yomotsu/camera-controls) to control the camera in 2D and 3D. Check out it's API to find out what features it offers.
- */
-export declare class SimpleCamera extends BaseCamera implements Updateable, Disposable {
-    /** {@link Updateable.onBeforeUpdate} */
-    readonly onBeforeUpdate: Event<SimpleCamera>;
-    /** {@link Updateable.onAfterUpdate} */
-    readonly onAfterUpdate: Event<SimpleCamera>;
-    /**
-     * Event that is triggered when the aspect of the camera has been updated.
-     * This event is useful when you need to perform actions after the aspect of the camera has been changed.
-     */
-    readonly onAspectUpdated: Event<unknown>;
-    /** {@link Disposable.onDisposed} */
-    readonly onDisposed: Event<string>;
-    /**
-     * A three.js PerspectiveCamera or OrthographicCamera instance.
-     * This camera is used for rendering the scene.
-     */
-    three: THREE.PerspectiveCamera | THREE.OrthographicCamera;
-    private _allControls;
-    /**
-     * The object that controls the camera. An instance of
-     * [yomotsu's cameracontrols](https://github.com/yomotsu/camera-controls).
-     * Transforming the camera directly will have no effect: you need to use this
-     * object to move, rotate, look at objects, etc.
-     */
-    get controls(): CameraControls;
-    /**
-     * Getter for the enabled state of the camera controls.
-     * If the current world is null, it returns false.
-     * Otherwise, it returns the enabled state of the camera controls.
-     *
-     * @returns {boolean} The enabled state of the camera controls.
-     */
-    get enabled(): boolean;
-    /**
-     * Setter for the enabled state of the camera controls.
-     * If the current world is not null, it sets the enabled state of the camera controls to the provided value.
-     *
-     * @param {boolean} enabled - The new enabled state of the camera controls.
-     */
-    set enabled(enabled: boolean);
-    constructor(components: Components);
-    /** {@link Disposable.dispose} */
-    dispose(): void;
-    /** {@link Updateable.update} */
-    update(_delta: number): void;
-    /**
-     * Updates the aspect of the camera to match the size of the
-     * {@link Components.renderer}.
-     */
-    updateAspect: () => void;
-    private setupCamera;
-    private newCameraControls;
-    private setupEvents;
-    private static getSubsetOfThree;
-}
-import * as THREE from "three";
-import { SimpleScene } from "./simple-scene";
-import { ColorSettingsControl, NumberSettingControl, Vector3SettingControl } from "../../Types";
-import { Configurator } from "../../ConfigManager";
-type SimpleSceneConfigType = {
-    backgroundColor: ColorSettingsControl;
-    ambientLight: {
-        color: ColorSettingsControl;
-        intensity: NumberSettingControl;
-    };
-    directionalLight: {
-        color: ColorSettingsControl;
-        intensity: NumberSettingControl;
-        position: Vector3SettingControl;
-    };
-};
-declare class DirectionalLightConfig {
-    private _list;
-    private _scene;
-    constructor(list: SimpleSceneConfigType, scene: SimpleScene);
-    get color(): THREE.Color;
-    set color(value: THREE.Color);
-    get intensity(): number;
-    set intensity(value: number);
-    get position(): THREE.Vector3;
-    set position(value: THREE.Vector3);
-}
-declare class AmbientLightConfig {
-    private _list;
-    private _scene;
-    constructor(list: SimpleSceneConfigType, scene: SimpleScene);
-    get color(): THREE.Color;
-    set color(value: THREE.Color);
-    get intensity(): number;
-    set intensity(value: number);
-}
-/**
- * Configuration interface for the {@link SimpleScene}.
- */
-export interface SimpleSceneConfig {
-    backgroundColor: THREE.Color;
-    directionalLight: {
-        color: THREE.Color;
-        intensity: number;
-        position: THREE.Vector3;
-    };
-    ambientLight: {
-        color: THREE.Color;
-        intensity: number;
-    };
-}
-export declare class SimpleSceneConfigManager extends Configurator<SimpleScene, SimpleSceneConfigType> {
-    protected _config: SimpleSceneConfigType;
-    ambientLight: AmbientLightConfig;
-    directionalLight: DirectionalLightConfig;
-    get backgroundColor(): THREE.Color;
-    set backgroundColor(value: THREE.Color);
-}
-export {};
-import * as THREE from "three";
-import { Event, World } from "../../Types";
-import { Components } from "../../Components";
-/**
- * A base renderer to determine visibility on screen.
- */
-export declare class DistanceRenderer {
-    /** {@link Disposable.onDisposed} */
-    readonly onDisposed: Event<string>;
-    /**
-     * Fires after making the visibility check to the meshes. It lists the
-     * meshes that are currently visible, and the ones that were visible
-     * just before but not anymore.
-     */
-    readonly onDistanceComputed: Event<number>;
-    /**
-     * Objects that won't be taken into account in the distance check.
-     */
-    excludedObjects: Set<THREE.Object3D<THREE.Object3DEventMap>>;
-    /**
-     * Whether this renderer is active or not. If not, it won't render anything.
-     */
-    enabled: boolean;
-    /**
-     * Render the internal scene used to determine the object visibility. Used
-     * for debugging purposes.
-     */
-    renderDebugFrame: boolean;
-    /** The components instance to which this renderer belongs. */
-    components: Components;
-    /**
-     * The scene where the distance is computed.
-     */
-    scene: THREE.Scene;
-    /**
-     * The camera used to compute the distance.
-     */
-    camera: THREE.OrthographicCamera;
-    /**
-     * The material used to compute the distance.
-     */
-    depthMaterial: THREE.ShaderMaterial;
-    /** The world instance to which this renderer belongs. */
-    readonly world: World;
-    /** The THREE.js renderer used to make the visibility test. */
-    readonly renderer: THREE.WebGLRenderer;
-    protected readonly worker: Worker;
-    private _width;
-    private _height;
-    private readonly _postQuad;
-    private readonly tempRT;
-    private readonly resultRT;
-    private readonly bufferSize;
-    private readonly _buffer;
-    protected _isWorkerBusy: boolean;
-    constructor(components: Components, world: World);
-    /** {@link Disposable.dispose} */
-    dispose(): void;
-    /**
-     * The function that the culler uses to reprocess the scene. Generally it's
-     * better to call needsUpdate, but you can also call this to force it.
-     * @param force if true, it will refresh the scene even if needsUpdate is
-     * not true.
-     */
-    compute: () => Promise<void>;
-    private handleWorkerMessage;
-}
-import * as WEBIFC from "web-ifc";
-import * as THREE from "three";
-export declare class Units {
-    factor: number;
-    complement: number;
-    apply(matrix: THREE.Matrix4): void;
-    setUp(webIfc: WEBIFC.IfcAPI): void;
-    private getLengthUnits;
-    private getScaleMatrix;
-}
-import * as THREE from "three";
-import { Hideable, Disposable, Event, World } from "../../Types";
-import { Components } from "../../Components";
-/**
- * Each of the clipping planes created by the clipper.
- */
-export declare class SimplePlane implements Disposable, Hideable {
-    /** Event that fires when the user starts dragging a clipping plane. */
-    readonly onDraggingStarted: Event<unknown>;
-    /** Event that fires when the user stops dragging a clipping plane. */
-    readonly onDraggingEnded: Event<unknown>;
-    /** {@link Disposable.onDisposed} */
-    readonly onDisposed: Event<unknown>;
-    /**
-     * The normal vector of the clipping plane.
-     */
-    readonly normal: THREE.Vector3;
-    /**
-     * The origin point of the clipping plane.
-     */
-    readonly origin: THREE.Vector3;
-    /**
-     * The THREE.js Plane object representing the clipping plane.
-     */
-    readonly three: THREE.Plane;
-    /** The components instance to which this plane belongs. */
-    components: Components;
-    /** The world instance to which this plane belongs. */
-    world: World;
-    /** A custom string to identify what this plane is used for. */
-    type: string;
-    protected readonly _helper: THREE.Object3D;
-    protected _visible: boolean;
-    protected _enabled: boolean;
-    private _controlsActive;
-    private readonly _arrowBoundBox;
-    private readonly _planeMesh;
-    private readonly _controls;
-    private readonly _hiddenMaterial;
-    /**
-     * Getter for the enabled state of the clipping plane.
-     * @returns {boolean} The current enabled state.
-     */
-    get enabled(): boolean;
-    /**
-     * Setter for the enabled state of the clipping plane.
-     * Updates the clipping plane state in the renderer and throws an error if no renderer is found.
-     * @param {boolean} state - The new enabled state.
-     */
-    set enabled(state: boolean);
-    /** {@link Hideable.visible } */
-    get visible(): boolean;
-    /** {@link Hideable.visible } */
-    set visible(state: boolean);
-    /** The meshes used for raycasting */
-    get meshes(): THREE.Mesh[];
-    /** The material of the clipping plane representation. */
-    get planeMaterial(): THREE.Material | THREE.Material[];
-    /** The material of the clipping plane representation. */
-    set planeMaterial(material: THREE.Material | THREE.Material[]);
-    /** The size of the clipping plane representation. */
-    get size(): number;
-    /** Sets the size of the clipping plane representation. */
-    set size(size: number);
-    /**
-     * Getter for the helper object of the clipping plane.
-     * The helper object is a THREE.Object3D that contains the clipping plane mesh and other related objects.
-     * It is used for positioning, rotating, and scaling the clipping plane in the 3D scene.
-     *
-     * @returns {THREE.Object3D} The helper object of the clipping plane.
-     */
-    get helper(): THREE.Object3D<THREE.Object3DEventMap>;
-    constructor(components: Components, world: World, origin: THREE.Vector3, normal: THREE.Vector3, material: THREE.Material, size?: number, activateControls?: boolean);
-    /**
-     * Sets the clipping plane's normal and origin from the given normal and point.
-     * This method resets the clipping plane's state, updates the normal and origin,
-     * and positions the helper object accordingly.
-     *
-     * @param normal - The new normal vector for the clipping plane.
-     * @param point - The new origin point for the clipping plane.
-     *
-     * @returns {void}
-     */
-    setFromNormalAndCoplanarPoint(normal: THREE.Vector3, point: THREE.Vector3): void;
-    /** {@link Updateable.update} */
-    update: () => void;
-    /** {@link Disposable.dispose} */
-    dispose(): void;
-    private reset;
-    protected toggleControls(state: boolean): void;
-    private newTransformControls;
-    private initializeControls;
-    private createArrowBoundingBox;
-    private changeDrag;
-    private notifyDraggingChanged;
-    private preventCameraMovement;
-    private newHelper;
-    private static newPlaneMesh;
-}
-import { SimplePlane } from "../../Clipper";
-import { DataSet } from "../../Types";
-export interface ViewpointCamera {
-    direction: {
-        x: number;
-        y: number;
-        z: number;
-    };
-    position: {
-        x: number;
-        y: number;
-        z: number;
-    };
-    aspectRatio: number;
-}
-export interface ViewpointPerspectiveCamera extends ViewpointCamera {
-    fov: number;
-}
-export interface ViewpointOrthographicCamera extends ViewpointCamera {
-    viewToWorldScale: number;
-}
-/**
- * Represents a viewpoint in a BCF file.
- */
-export interface BCFViewpoint {
-    title?: string;
-    guid: string;
-    camera: ViewpointPerspectiveCamera | ViewpointOrthographicCamera;
-    selectionComponents: Iterable<string>;
-    exceptionComponents: Iterable<string>;
-    clippingPlanes: DataSet<SimplePlane>;
-    spacesVisible: boolean;
-    spaceBoundariesVisible: boolean;
-    openingsVisible: boolean;
-    defaultVisibility: boolean;
+    resize(size?: THREE.Vector2): void;
+    /** {@link Configurable.setup} */
+    setup(config?: Partial<MiniMapConfig>): void;
+    private updatePlanes;
 }
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
@@ -4954,6 +3350,1406 @@ export declare class Viewpoint implements BCFViewpoint {
      */
     serialize(version?: string): Promise<string>;
 }
+import * as THREE from "three";
+import { Event, World } from "../../Types";
+import { Components } from "../../Components";
+/**
+ * A base renderer to determine visibility on screen.
+ */
+export declare class DistanceRenderer {
+    /** {@link Disposable.onDisposed} */
+    readonly onDisposed: Event<string>;
+    /**
+     * Fires after making the visibility check to the meshes. It lists the
+     * meshes that are currently visible, and the ones that were visible
+     * just before but not anymore.
+     */
+    readonly onDistanceComputed: Event<number>;
+    /**
+     * Objects that won't be taken into account in the distance check.
+     */
+    excludedObjects: Set<THREE.Object3D<THREE.Object3DEventMap>>;
+    /**
+     * Whether this renderer is active or not. If not, it won't render anything.
+     */
+    enabled: boolean;
+    /**
+     * Render the internal scene used to determine the object visibility. Used
+     * for debugging purposes.
+     */
+    renderDebugFrame: boolean;
+    /** The components instance to which this renderer belongs. */
+    components: Components;
+    /**
+     * The scene where the distance is computed.
+     */
+    scene: THREE.Scene;
+    /**
+     * The camera used to compute the distance.
+     */
+    camera: THREE.OrthographicCamera;
+    /**
+     * The material used to compute the distance.
+     */
+    depthMaterial: THREE.ShaderMaterial;
+    /** The world instance to which this renderer belongs. */
+    readonly world: World;
+    /** The THREE.js renderer used to make the visibility test. */
+    readonly renderer: THREE.WebGLRenderer;
+    protected readonly worker: Worker;
+    private _width;
+    private _height;
+    private readonly _postQuad;
+    private readonly tempRT;
+    private readonly resultRT;
+    private readonly bufferSize;
+    private readonly _buffer;
+    protected _isWorkerBusy: boolean;
+    constructor(components: Components, world: World);
+    /** {@link Disposable.dispose} */
+    dispose(): void;
+    /**
+     * The function that the culler uses to reprocess the scene. Generally it's
+     * better to call needsUpdate, but you can also call this to force it.
+     * @param force if true, it will refresh the scene even if needsUpdate is
+     * not true.
+     */
+    compute: () => Promise<void>;
+    private handleWorkerMessage;
+}
+import * as THREE from "three";
+import { BaseScene, Configurable, Event } from "../../Types";
+import { Components } from "../../Components";
+import { SimpleSceneConfig, SimpleSceneConfigManager } from "./simple-scene-config";
+/**
+ * A basic 3D [scene](https://threejs.org/docs/#api/en/scenes/Scene) to add objects hierarchically, and easily dispose them when you are finished with it.
+ */
+export declare class SimpleScene extends BaseScene implements Configurable<SimpleSceneConfigManager, SimpleSceneConfig> {
+    /** {@link Configurable.onSetup} */
+    readonly onSetup: Event<unknown>;
+    /** {@link Configurable.isSetup} */
+    isSetup: boolean;
+    /**
+     * The underlying Three.js scene object.
+     * It is used to define the 3D space containing objects, lights, and cameras.
+     */
+    three: THREE.Scene;
+    /** {@link Configurable.config} */
+    config: SimpleSceneConfigManager;
+    protected _defaultConfig: SimpleSceneConfig;
+    constructor(components: Components);
+    /** {@link Configurable.setup} */
+    setup(config?: Partial<SimpleSceneConfig>): void;
+    dispose(): void;
+}
+import * as THREE from "three";
+import { Event, Base, World, BaseScene, BaseCamera, BaseRenderer, Disposable, Updateable } from "../../Types";
+/**
+ * A class representing a simple world in a 3D environment. It extends the Base class and implements the World interface.
+ *
+ * @template T - The type of the scene. Default is BaseScene.
+ * @template U - The type of the camera. Default is BaseCamera.
+ * @template S - The type of the renderer. Default is BaseRenderer.
+ */
+export declare class SimpleWorld<T extends BaseScene = BaseScene, U extends BaseCamera = BaseCamera, S extends BaseRenderer = BaseRenderer> extends Base implements World, Disposable, Updateable {
+    /**
+     * All the loaded [meshes](https://threejs.org/docs/#api/en/objects/Mesh). These meshes will be taken into account in operations like raycasting.
+     */
+    readonly meshes: Set<THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.Material | THREE.Material[], THREE.Object3DEventMap>>;
+    /** {@link Updateable.onAfterUpdate} */
+    readonly onAfterUpdate: Event<unknown>;
+    /** {@link Updateable.onBeforeUpdate} */
+    readonly onBeforeUpdate: Event<unknown>;
+    /** {@link Disposable.onDisposed} */
+    readonly onDisposed: Event<unknown>;
+    /**
+     * Indicates whether the world is currently being disposed. This is useful to prevent trying to access world's elements when it's being disposed, which could cause errors when you dispose a world.
+     */
+    isDisposing: boolean;
+    /**
+     * Indicates whether the world is currently enabled.
+     * When disabled, the world will not be updated.
+     */
+    enabled: boolean;
+    /**
+     * A unique identifier for the world. Is not meant to be changed at any moment.
+     */
+    readonly uuid: string;
+    /**
+     * An optional name for the world.
+     */
+    name?: string;
+    private _scene?;
+    private _camera?;
+    private _renderer;
+    /**
+     * Getter for the scene. If no scene is initialized, it throws an error.
+     * @returns The current scene.
+     */
+    get scene(): T;
+    /**
+     * Setter for the scene. It sets the current scene, adds the world to the scene's worlds set,
+     * sets the current world in the scene, and triggers the scene's onWorldChanged event with the added action.
+     * @param scene - The new scene to be set.
+     */
+    set scene(scene: T);
+    /**
+     * Getter for the camera. If no camera is initialized, it throws an error.
+     * @returns The current camera.
+     */
+    get camera(): U;
+    /**
+     * Setter for the camera. It sets the current camera, adds the world to the camera's worlds set,
+     * sets the current world in the camera, and triggers the camera's onWorldChanged event with the added action.
+     * @param camera - The new camera to be set.
+     */
+    set camera(camera: U);
+    /**
+     * Getter for the renderer.
+     * @returns The current renderer or null if no renderer is set. Some worlds don't need a renderer to work (when your mail goal is not to display a 3D viewport to the user).
+     */
+    get renderer(): S | null;
+    /**
+     * Setter for the renderer. It sets the current renderer, adds the world to the renderer's worlds set,
+     * sets the current world in the renderer, and triggers the renderer's onWorldChanged event with the added action.
+     * If a new renderer is set, it also triggers the onWorldChanged event with the removed action for the old renderer.
+     * @param renderer - The new renderer to be set or null to remove the current renderer.
+     */
+    set renderer(renderer: S | null);
+    /** {@link Updateable.update} */
+    update(delta?: number): void;
+    /** {@link Disposable.dispose} */
+    dispose(disposeResources?: boolean): void;
+}
+import * as THREE from "three";
+import { BaseRenderer, Event } from "../../Types";
+import { Components } from "../../Components";
+/**
+ * A basic renderer capable of rendering [Objec3Ds](https://threejs.org/docs/#api/en/core/Object3D).
+ */
+export declare class SimpleRenderer extends BaseRenderer {
+    /**
+     * Indicates whether the renderer is enabled. If it's not, it won't be updated.
+     * Default is 'true'.
+     */
+    enabled: boolean;
+    needsUpdate: boolean;
+    /**
+     * The HTML container of the THREE.js canvas where the scene is rendered.
+     */
+    container: HTMLElement;
+    /**
+     * The THREE.js WebGLRenderer instance.
+     */
+    three: THREE.WebGLRenderer;
+    protected _canvas: HTMLCanvasElement;
+    protected _parameters?: Partial<THREE.WebGLRendererParameters>;
+    protected _resizeObserver: ResizeObserver | null;
+    protected onContainerUpdated: Event<unknown>;
+    private _resizing;
+    /**
+     * Constructor for the SimpleRenderer class.
+     *
+     * @param components - The components instance.
+     * @param container - The HTML container where the THREE.js canvas will be rendered.
+     * @param parameters - Optional parameters for the THREE.js WebGLRenderer.
+     */
+    constructor(components: Components, container: HTMLElement, parameters?: Partial<THREE.WebGLRendererParameters>);
+    /** {@link Updateable.update} */
+    update(): void;
+    /** {@link Disposable.dispose} */
+    dispose(): void;
+    /** {@link Resizeable.getSize}. */
+    getSize(): THREE.Vector2;
+    /** {@link Resizeable.resize} */
+    resize: (size?: THREE.Vector2) => void;
+    /**
+     * Sets up and manages the event listeners for the renderer.
+     *
+     * @param active - A boolean indicating whether to activate or deactivate the event listeners.
+     *
+     * @throws Will throw an error if the renderer does not have an HTML container.
+     */
+    setupEvents(active: boolean): void;
+    private resizeEvent;
+    private setupRenderer;
+    private onContextLost;
+    private onContextBack;
+}
+import * as THREE from "three";
+import CameraControls from "camera-controls";
+import { Disposable, Updateable, Event, BaseCamera } from "../../Types";
+import { Components } from "../../Components";
+/**
+ * A basic camera that uses [yomotsu's cameracontrols](https://github.com/yomotsu/camera-controls) to control the camera in 2D and 3D. Check out it's API to find out what features it offers.
+ */
+export declare class SimpleCamera extends BaseCamera implements Updateable, Disposable {
+    /** {@link Updateable.onBeforeUpdate} */
+    readonly onBeforeUpdate: Event<SimpleCamera>;
+    /** {@link Updateable.onAfterUpdate} */
+    readonly onAfterUpdate: Event<SimpleCamera>;
+    /**
+     * Event that is triggered when the aspect of the camera has been updated.
+     * This event is useful when you need to perform actions after the aspect of the camera has been changed.
+     */
+    readonly onAspectUpdated: Event<unknown>;
+    /** {@link Disposable.onDisposed} */
+    readonly onDisposed: Event<string>;
+    /**
+     * A three.js PerspectiveCamera or OrthographicCamera instance.
+     * This camera is used for rendering the scene.
+     */
+    three: THREE.PerspectiveCamera | THREE.OrthographicCamera;
+    private _allControls;
+    /**
+     * The object that controls the camera. An instance of
+     * [yomotsu's cameracontrols](https://github.com/yomotsu/camera-controls).
+     * Transforming the camera directly will have no effect: you need to use this
+     * object to move, rotate, look at objects, etc.
+     */
+    get controls(): CameraControls;
+    /**
+     * Getter for the enabled state of the camera controls.
+     * If the current world is null, it returns false.
+     * Otherwise, it returns the enabled state of the camera controls.
+     *
+     * @returns {boolean} The enabled state of the camera controls.
+     */
+    get enabled(): boolean;
+    /**
+     * Setter for the enabled state of the camera controls.
+     * If the current world is not null, it sets the enabled state of the camera controls to the provided value.
+     *
+     * @param {boolean} enabled - The new enabled state of the camera controls.
+     */
+    set enabled(enabled: boolean);
+    constructor(components: Components);
+    /** {@link Disposable.dispose} */
+    dispose(): void;
+    /** {@link Updateable.update} */
+    update(_delta: number): void;
+    /**
+     * Updates the aspect of the camera to match the size of the
+     * {@link Components.renderer}.
+     */
+    updateAspect: () => void;
+    private setupCamera;
+    private newCameraControls;
+    private setupEvents;
+    private static getSubsetOfThree;
+}
+/**
+ * Simple event handler by [Jason Kleban](https://gist.github.com/JasonKleban/50cee44960c225ac1993c922563aa540). Keep in mind that if you want to remove it later, you might want to declare the callback as an object. If you want to maintain the reference to 'this', you will need to declare the callback as an arrow function.
+ */
+export declare class Event<T> {
+    /**
+     * Whether this event is active or not. If not, it won't trigger.
+     */
+    enabled: boolean;
+    /**
+     * Add a callback to this event instance.
+     * @param handler - the callback to be added to this event.
+     */
+    add(handler: T extends void ? {
+        (): void;
+    } : {
+        (data: T): void;
+    }): void;
+    /**
+     * Removes a callback from this event instance.
+     * @param handler - the callback to be removed from this event.
+     */
+    remove(handler: T extends void ? {
+        (): void;
+    } : {
+        (data: T): void;
+    }): void;
+    /** Triggers all the callbacks assigned to this event. */
+    trigger: (data?: T) => void;
+    /** Gets rid of all the suscribed events. */
+    reset(): void;
+    private handlers;
+}
+/**
+ * Simple event handler by [Jason Kleban](https://gist.github.com/JasonKleban/50cee44960c225ac1993c922563aa540). Keep in mind that if you want to remove it later, you might want to declare the callback as an object. If you want to maintain the reference to 'this', you will need to declare the callback as an arrow function.
+ */
+export declare class AsyncEvent<T> {
+    /**
+     * Whether this event is active or not. If not, it won't trigger.
+     */
+    enabled: boolean;
+    /**
+     * Add a callback to this event instance.
+     * @param handler - the callback to be added to this event.
+     */
+    add(handler: T extends void ? {
+        (): Promise<void>;
+    } : {
+        (data: T): Promise<void>;
+    }): void;
+    /**
+     * Removes a callback from this event instance.
+     * @param handler - the callback to be removed from this event.
+     */
+    remove(handler: T extends void ? {
+        (): Promise<void>;
+    } : {
+        (data: T): Promise<void>;
+    }): void;
+    /** Triggers all the callbacks assigned to this event. */
+    trigger: (data?: T) => Promise<void>;
+    /** Gets rid of all the suscribed events. */
+    reset(): void;
+    private handlers;
+}
+import * as THREE from "three";
+import { SimpleScene } from "./simple-scene";
+import { ColorSettingsControl, NumberSettingControl, Vector3SettingControl } from "../../Types";
+import { Configurator } from "../../ConfigManager";
+type SimpleSceneConfigType = {
+    backgroundColor: ColorSettingsControl;
+    ambientLight: {
+        color: ColorSettingsControl;
+        intensity: NumberSettingControl;
+    };
+    directionalLight: {
+        color: ColorSettingsControl;
+        intensity: NumberSettingControl;
+        position: Vector3SettingControl;
+    };
+};
+declare class DirectionalLightConfig {
+    private _list;
+    private _scene;
+    constructor(list: SimpleSceneConfigType, scene: SimpleScene);
+    get color(): THREE.Color;
+    set color(value: THREE.Color);
+    get intensity(): number;
+    set intensity(value: number);
+    get position(): THREE.Vector3;
+    set position(value: THREE.Vector3);
+}
+declare class AmbientLightConfig {
+    private _list;
+    private _scene;
+    constructor(list: SimpleSceneConfigType, scene: SimpleScene);
+    get color(): THREE.Color;
+    set color(value: THREE.Color);
+    get intensity(): number;
+    set intensity(value: number);
+}
+/**
+ * Configuration interface for the {@link SimpleScene}.
+ */
+export interface SimpleSceneConfig {
+    backgroundColor: THREE.Color;
+    directionalLight: {
+        color: THREE.Color;
+        intensity: number;
+        position: THREE.Vector3;
+    };
+    ambientLight: {
+        color: THREE.Color;
+        intensity: number;
+    };
+}
+export declare class SimpleSceneConfigManager extends Configurator<SimpleScene, SimpleSceneConfigType> {
+    protected _config: SimpleSceneConfigType;
+    ambientLight: AmbientLightConfig;
+    directionalLight: DirectionalLightConfig;
+    get backgroundColor(): THREE.Color;
+    set backgroundColor(value: THREE.Color);
+}
+export {};
+import * as THREE from "three";
+import CameraControls from "camera-controls";
+import { Event } from "./event";
+import { EventManager } from "./event-manager";
+/**
+ * Whether this component has to be manually destroyed once you are done with it to prevent [memory leaks](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects). This also ensures that the DOM events created by that component will be cleaned up.
+ */
+export interface Disposable {
+    /**
+     * Destroys the object from memory to prevent a
+     * [memory leak](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
+     */
+    dispose: () => void | Promise<void>;
+    /** Fired after the tool has been disposed.  */
+    readonly onDisposed: Event<any>;
+}
+/**
+ * Whether the geometric representation of this component can be hidden or shown in the [Three.js scene](https://threejs.org/docs/#api/en/scenes/Scene).
+ */
+export interface Hideable {
+    /**
+     * Whether the geometric representation of this component is
+     * currently visible or not in the
+     * [Three.js scene](https://threejs.org/docs/#api/en/scenes/Scene).
+     */
+    visible: boolean;
+}
+/**
+ * Whether this component can be resized. The meaning of this can vary depending on the component: resizing a [Renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer) component could mean changing its resolution, whereas resizing a [Mesh](https://threejs.org/docs/#api/en/objects/Mesh) would change its scale.
+ */
+export interface Resizeable {
+    /**
+     * Sets size of this component (e.g. the resolution of a
+     * [Renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
+     * component.
+     */
+    resize: (size?: THREE.Vector2) => void;
+    /** Event that fires when the component has been resized. */
+    onResize: Event<THREE.Vector2>;
+    /**
+     * Gets the current size of this component (e.g. the resolution of a
+     * [Renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
+     * component.
+     */
+    getSize: () => THREE.Vector2;
+}
+/** Whether this component should be updated each frame. */
+export interface Updateable {
+    /** Actions that should be executed after updating the component. */
+    onAfterUpdate: Event<any>;
+    /** Actions that should be executed before updating the component. */
+    onBeforeUpdate: Event<any>;
+    /**
+     * Function used to update the state of this component each frame. For
+     * instance, a renderer component will make a render each frame.
+     */
+    update(delta?: number): void;
+}
+/** Basic type to describe the progress of any kind of process. */
+export interface Progress {
+    /** The amount of things that have been done already. */
+    current: number;
+    /** The total amount of things to be done by the process. */
+    total: number;
+}
+/**
+ * Whether this component supports create and destroy operations. This generally applies for components that work with instances, such as clipping planes or dimensions.
+ */
+export interface Createable {
+    /** Creates a new instance of an element (e.g. a new Dimension). */
+    create: (data: any) => void;
+    /**
+     * Finish the creation process of the component, successfully creating an
+     * instance of whatever the component creates.
+     */
+    endCreation?: (data: any) => void;
+    /**
+     * Cancels the creation process of the component, going back to the state
+     * before starting to create.
+     */
+    cancelCreation?: (data: any) => void;
+    /** Deletes an existing instance of an element (e.g. a Dimension). */
+    delete: (data: any) => void;
+}
+/**
+ * Whether this component supports to be configured.
+ */
+export interface Configurable<T, U> {
+    /** Wether this components has been already configured. */
+    isSetup: boolean;
+    /** Use the provided configuration to set up the tool. */
+    setup: (config?: Partial<U>) => void | Promise<void>;
+    /** Fired after successfully calling {@link Configurable.setup()}  */
+    readonly onSetup: Event<any>;
+    /** Object holding the tool configuration. You can edit this directly to change the object.
+     */
+    config: Required<T>;
+}
+/**
+ * Whether a camera uses the Camera Controls library.
+ */
+export interface CameraControllable {
+    /**
+     * An instance of CameraControls that provides camera control functionalities.
+     * This instance is used to manipulate the camera.
+     */
+    controls: CameraControls;
+}
+/**
+ * Whether it has events or not.
+ */
+export interface Eventable {
+    /**
+     * The object in charge of managing all the events.
+     */
+    eventManager: EventManager;
+}
+import { Disposable, Hideable, Resizeable, Updateable, Configurable } from "./interfaces";
+import { Components } from "../../Components";
+/**
+ * Base class of the library. Useful for finding out the interfaces something implements.
+ */
+export declare abstract class Base {
+    components: Components;
+    constructor(components: Components);
+    /** Whether is component is {@link Disposable}. */
+    isDisposeable: () => this is Disposable;
+    /** Whether is component is {@link Resizeable}. */
+    isResizeable: () => this is Resizeable;
+    /** Whether is component is {@link Updateable}. */
+    isUpdateable: () => this is Updateable;
+    /** Whether is component is {@link Hideable}. */
+    isHideable: () => this is Hideable;
+    /** Whether is component is {@link Configurable}. */
+    isConfigurable: () => this is Configurable<any, any>;
+}
+import { Base } from "./base";
+import { World } from "./world";
+import { Event } from "./event";
+import { Components } from "../../Components";
+/**
+ * One of the elements that make a world. It can be either a scene, a camera or a renderer.
+ */
+export declare abstract class BaseWorldItem extends Base {
+    readonly worlds: Map<string, World>;
+    /**
+     * Event that is triggered when a world is added or removed from the 'worlds' map.
+     * The event payload contains the world instance and the action ("added" or "removed").
+     */
+    readonly onWorldChanged: Event<{
+        world: World;
+        action: "added" | "removed";
+    }>;
+    /**
+     * The current world this item is associated with. It can be null if no world is currently active.
+     */
+    currentWorld: World | null;
+    protected constructor(components: Components);
+}
+import { Base } from "./base";
+/**
+ * Components are the building blocks of this library. Components are singleton elements that contain specific functionality. For instance, the Clipper Component can create, delete and handle 3D clipping planes. Components must be unique (they can't be instanced more than once per Components instance), and have a static UUID that identifies them uniquely. The can be accessed globally using the {@link Components} instance.
+ */
+export declare abstract class Component extends Base {
+    /**
+     * Whether this component is active or not. The behaviour can vary depending
+     * on the type of component. E.g. a disabled dimension tool will stop creating
+     * dimensions, while a disabled camera will stop moving. A disabled component
+     * will not be updated automatically each frame.
+     */
+    abstract enabled: boolean;
+}
+import * as THREE from "three";
+import CameraControls from "camera-controls";
+import { BaseWorldItem } from "./base-world-item";
+import { CameraControllable } from "./interfaces";
+/**
+ * Abstract class representing a camera in a 3D world. All cameras should use this class as a base.
+ */
+export declare abstract class BaseCamera extends BaseWorldItem {
+    /**
+     * Whether the camera is enabled or not.
+     */
+    abstract enabled: boolean;
+    /**
+     * The Three.js camera instance.
+     */
+    abstract three: THREE.Camera;
+    /**
+     * Optional CameraControls instance for controlling the camera.
+     * This property is only available if the camera is controllable.
+     */
+    abstract controls?: CameraControls;
+    /**
+     * Checks whether the instance is {@link CameraControllable}.
+     *
+     * @returns True if the instance is controllable, false otherwise.
+     */
+    hasCameraControls: () => this is CameraControllable;
+}
+import * as THREE from "three";
+import { Vector2 } from "three";
+import { Event } from "./event";
+import { BaseWorldItem } from "./base-world-item";
+import { Disposable, Resizeable, Updateable } from "./interfaces";
+/**
+ * Abstract class representing a renderer for a 3D world. All renderers should use this class as a base.
+ */
+export declare abstract class BaseRenderer extends BaseWorldItem implements Updateable, Disposable, Resizeable {
+    /**
+     * The three.js WebGLRenderer instance associated with this renderer.
+     *
+     * @abstract
+     * @type {THREE.WebGLRenderer}
+     */
+    abstract three: THREE.WebGLRenderer;
+    /** {@link Updateable.onBeforeUpdate} */
+    onAfterUpdate: Event<unknown>;
+    /** {@link Updateable.onAfterUpdate} */
+    onBeforeUpdate: Event<unknown>;
+    /** {@link Disposable.onDisposed} */
+    readonly onDisposed: Event<undefined>;
+    /** {@link Resizeable.onResize} */
+    readonly onResize: Event<THREE.Vector2>;
+    /**
+     * Event that fires when there has been a change to the list of clipping
+     * planes used by the active renderer.
+     */
+    readonly onClippingPlanesUpdated: Event<unknown>;
+    /** {@link Updateable.update} */
+    abstract update(delta?: number): void | Promise<void>;
+    /** {@link Disposable.dispose} */
+    abstract dispose(): void;
+    /** {@link Resizeable.getSize} */
+    abstract getSize(): Vector2;
+    /** {@link Resizeable.resize} */
+    abstract resize(size: Vector2 | undefined): void;
+    /**
+     * The list of [clipping planes](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.clippingPlanes) used by this instance of the renderer.
+     */
+    clippingPlanes: THREE.Plane[];
+    /**
+     * Updates the clipping planes and triggers the 'onClippingPlanesUpdated' event.
+     *
+     * @remarks
+     * This method is typically called when there is a change to the list of clipping planes
+     * used by the active renderer.
+     */
+    updateClippingPlanes(): void;
+    /**
+     * Sets or removes a clipping plane from the renderer.
+     *
+     * @param active - A boolean indicating whether the clipping plane should be active or not.
+     * @param plane - The clipping plane to be added or removed.
+     * @param isLocal - An optional boolean indicating whether the clipping plane is local to the object. If not provided, it defaults to 'false'.
+     *
+     * @remarks
+     * This method adds or removes a clipping plane from the 'clippingPlanes' array.
+     * If 'active' is 'true' and the plane is not already in the array, it is added.
+     * If 'active' is 'false' and the plane is in the array, it is removed.
+     * The 'three.clippingPlanes' property is then updated to reflect the current state of the 'clippingPlanes' array,
+     * excluding any planes marked as local.
+     */
+    setPlane(active: boolean, plane: THREE.Plane, isLocal?: boolean): void;
+}
+import * as THREE from "three";
+import { Disposable } from "./interfaces";
+import { Event } from "./event";
+import { Components } from "../../Components";
+import { BaseWorldItem } from "./base-world-item";
+/**
+ * Abstract class representing a base scene in the application. All scenes should use this class as a base.
+ */
+export declare abstract class BaseScene extends BaseWorldItem implements Disposable {
+    /** {@link Disposable.onDisposed} */
+    readonly onDisposed: Event<unknown>;
+    /**
+     * Abstract property representing the three.js object associated with this scene.
+     * It should be implemented by subclasses.
+     */
+    abstract three: THREE.Object3D;
+    /** The set of directional lights managed by this scene component. */
+    directionalLights: Map<string, THREE.DirectionalLight>;
+    /** The set of ambient lights managed by this scene component. */
+    ambientLights: Map<string, THREE.AmbientLight>;
+    protected constructor(components: Components);
+    /** {@link Disposable.dispose} */
+    dispose(): void;
+    deleteAllLights(): void;
+}
+import { Component } from "./component";
+import { Configurator } from "../../ConfigManager";
+import { Components } from "../../Components";
+export type ComponentUIElement = {
+    name: string;
+    id: string;
+    icon: string;
+    componentID: string;
+    get: (components: Components) => {
+        element: HTMLElement;
+        config?: Configurator;
+        dispose?: () => void;
+    };
+};
+export declare abstract class ComponentWithUI extends Component {
+    abstract name: string;
+    abstract getUI(): ComponentUIElement[];
+}
+import * as THREE from "three";
+export interface BooleanSettingsControl {
+    type: "Boolean";
+    value: boolean;
+}
+export interface ColorSettingsControl {
+    type: "Color";
+    value: THREE.Color;
+}
+export interface TextSettingsControl {
+    type: "Text";
+    value: string;
+}
+export interface NumberSettingControl {
+    type: "Number";
+    interpolable: boolean;
+    min?: number;
+    max?: number;
+    value: number;
+}
+export interface SelectSettingControl {
+    type: "Select";
+    multiple: boolean;
+    options: Set<string>;
+    value: string;
+}
+export interface Vector3SettingControl {
+    type: "Vector3";
+    value: THREE.Vector3;
+}
+export interface TextSetSettingControl {
+    type: "TextSet";
+    value: Set<string>;
+}
+export interface NoControl {
+    type: "None";
+    value: any;
+}
+export type ControlEntry = BooleanSettingsControl | ColorSettingsControl | TextSettingsControl | NumberSettingControl | SelectSettingControl | Vector3SettingControl | TextSetSettingControl | NoControl;
+export interface ControlsSchema {
+    [name: string]: ControlEntry | ControlsSchema;
+}
+export declare class ControlsUtils {
+    static isEntry(item: any): boolean;
+    static copySchema<T extends ControlsSchema = ControlsSchema>(schema: T, copy?: ControlsSchema): T;
+    static copyEntry(controlEntry: ControlEntry): ControlEntry;
+}
+import * as THREE from "three";
+import { BaseScene } from "./base-scene";
+import { BaseCamera } from "./base-camera";
+import { BaseRenderer } from "./base-renderer";
+import { Updateable, Disposable } from "./interfaces";
+/**
+ * Represents a 3D world with meshes, scene, camera, renderer, and other properties.
+ */
+export interface World extends Disposable, Updateable {
+    /**
+     * A set of meshes present in the world. This is taken into account for operations like raycasting.
+     */
+    meshes: Set<THREE.Mesh>;
+    /**
+     * The base scene of the world.
+     */
+    scene: BaseScene;
+    /**
+     * The base camera of the world.
+     */
+    camera: BaseCamera;
+    /**
+     * The base renderer of the world. Can be null if this world doesn't use a renderer (e.g. in a backend environment).
+     */
+    renderer: BaseRenderer | null;
+    /**
+     * A unique identifier for the world.
+     */
+    uuid: string;
+    /**
+     * Indicates whether the world is currently disposing. This is useful for cancelling logic that access the elements of a world (which are also disposed).
+     */
+    isDisposing: boolean;
+}
+import { Event } from "./event";
+/**
+ * A class that extends the built-in Map class and provides additional events for item set, update, delete, and clear operations.
+ *
+ * @template K - The type of keys in the map.
+ * @template V - The type of values in the map.
+ */
+export declare class DataMap<K, V> extends Map<K, V> {
+    /**
+     * An event triggered when a new item is set in the map.
+     */
+    readonly onItemSet: Event<{
+        key: K;
+        value: V;
+    }>;
+    /**
+     * An event triggered when an existing item in the map is updated.
+     */
+    readonly onItemUpdated: Event<{
+        key: K;
+        value: V;
+    }>;
+    /**
+     * An event triggered when an item is deleted from the map.
+     */
+    readonly onItemDeleted: Event<K>;
+    /**
+     * An event triggered when the map is cleared.
+     */
+    readonly onCleared: Event<unknown>;
+    /**
+     * Constructs a new DataMap instance.
+     *
+     * @param iterable - An iterable object containing key-value pairs to populate the map.
+     */
+    constructor(iterable?: Iterable<readonly [K, V]> | null | undefined);
+    /**
+     * Clears the map and triggers the onCleared event.
+     */
+    clear(): void;
+    /**
+     * Sets the value for the specified key in the map.
+     * If the item is new, then onItemSet is triggered.
+     * If the item is already in the map, then onItemUpdated is triggered.
+     *
+     * @param key - The key of the item to set.
+     * @param value - The value of the item to set.
+     * @returns The DataMap instance.
+     */
+    set(key: K, value: V): this;
+    /**
+     * A function that acts as a guard for adding items to the set.
+     * It determines whether a given value should be allowed to be added to the set.
+     *
+     * @param key - The key of the entry to be checked against the guard.
+     * @param value - The value of the entry to be checked against the guard.
+     * @returns A boolean indicating whether the value should be allowed to be added to the set.
+     *          By default, this function always returns true, allowing all values to be added.
+     *          You can override this behavior by providing a custom implementation.
+     */
+    guard: (key: K, value: V) => boolean;
+    /**
+     * Deletes the specified key from the map and triggers the onItemDeleted event if the key was found.
+     *
+     * @param key - The key of the item to delete.
+     * @returns True if the key was found and deleted; otherwise, false.
+     */
+    delete(key: K): boolean;
+    /**
+     * Clears the map and resets the events.
+     */
+    dispose(): void;
+}
+import { Event } from "./event";
+/**
+ * A class that extends the built-in Set class and provides additional functionality. It triggers events when items are added, deleted, or the set is cleared.
+ *
+ * @template T - The type of elements in the set.
+ */
+export declare class DataSet<T> extends Set<T> {
+    /**
+     * An event that is triggered when a new item is added to the set.
+     */
+    readonly onItemAdded: Event<T>;
+    /**
+     * An event that is triggered when an item is deleted from the set.
+     */
+    readonly onItemDeleted: Event<unknown>;
+    /**
+     * An event that is triggered when the set is cleared.
+     */
+    readonly onCleared: Event<unknown>;
+    /**
+     * Constructs a new instance of the DataSet class.
+     *
+     * @param iterable - An optional iterable object to initialize the set with.
+     */
+    constructor(iterable?: Iterable<T> | null);
+    /**
+     * Clears the set and triggers the onCleared event.
+     */
+    clear(): void;
+    /**
+     * Adds one or multiple values to the set and triggers the onItemAdded event per each.
+     *
+     * @param value - The value to add to the set.
+     * @returns - The set instance.
+     */
+    add(...value: T[]): this;
+    /**
+     * A function that acts as a guard for adding items to the set.
+     * It determines whether a given value should be allowed to be added to the set.
+     *
+     * @param value - The value to be checked against the guard.
+     * @returns A boolean indicating whether the value should be allowed to be added to the set.
+     *          By default, this function always returns true, allowing all values to be added.
+     *          You can override this behavior by providing a custom implementation.
+     */
+    guard: (value: T) => boolean;
+    /**
+     * Deletes a value from the set and triggers the onItemDeleted event.
+     *
+     * @param value - The value to delete from the set.
+     * @returns - True if the value was successfully deleted, false otherwise.
+     */
+    delete(value: T): boolean;
+    /**
+     * Clears the set and resets the onItemAdded, onItemDeleted, and onCleared events.
+     */
+    dispose(): void;
+}
+import { Event } from "./event";
+import { AsyncEvent } from "./async-event";
+/**
+ * Simple class to easily toggle and reset event lists.
+ */
+export declare class EventManager {
+    /**
+     * The list of events managed by this instance.
+     */
+    list: Set<Event<any> | AsyncEvent<any>>;
+    /**
+     * Adds events to this manager.
+     * @param events the events to add.
+     */
+    add(events: Iterable<Event<any> | AsyncEvent<any>>): void;
+    /**
+     * Removes events from this manager.
+     * @param events the events to remove.
+     */
+    remove(events: Iterable<Event<any> | AsyncEvent<any>>): void;
+    /**
+     * Sets all the events managed by this instance as enabled or disabled.
+     * @param active whether to turn on or off the events.
+     */
+    set(active: boolean): void;
+    /**
+     * Resets all the events managed by this instance.
+     */
+    reset(): void;
+}
+import * as THREE from "three";
+import { Components } from "../../Components";
+import { Event, World, Disposable } from "../../Types";
+import { Mouse } from "./mouse";
+/**
+ * A simple [raycaster](https://threejs.org/docs/#api/en/core/Raycaster) that allows to easily get items from the scene using the mouse and touch events.
+ */
+export declare class SimpleRaycaster implements Disposable {
+    /** {@link Component.enabled} */
+    enabled: boolean;
+    /** The components instance to which this Raycaster belongs. */
+    components: Components;
+    /** {@link Disposable.onDisposed} */
+    readonly onDisposed: Event<unknown>;
+    /** The position of the mouse in the screen. */
+    readonly mouse: Mouse;
+    /**
+     * A reference to the Three.js Raycaster instance.
+     * This is used for raycasting operations.
+     */
+    readonly three: THREE.Raycaster;
+    /**
+     * A reference to the world instance to which this Raycaster belongs.
+     * This is used to access the camera and meshes.
+     */
+    world: World;
+    constructor(components: Components, world: World);
+    /** {@link Disposable.dispose} */
+    dispose(): void;
+    /**
+     * Throws a ray from the camera to the mouse or touch event point and returns
+     * the first item found. This also takes into account the clipping planes
+     * used by the renderer.
+     *
+     * @param items - the [meshes](https://threejs.org/docs/#api/en/objects/Mesh)
+     * to query. If not provided, it will query all the meshes stored in
+     * {@link Components.meshes}.
+     * @param position - the screen position to use for raycasting. If not provided,
+     * the last pointer (mouse/touch) position will be used.
+     */
+    castRay(items?: THREE.Object3D[], position?: THREE.Vector2): THREE.Intersection | null;
+    /**
+     * Casts a ray from a given origin in a given direction and returns the first item found.
+     * This method also takes into account the clipping planes used by the renderer.
+     *
+     * @param origin - The origin of the ray.
+     * @param direction - The direction of the ray.
+     * @param items - The meshes to query. If not provided, it will query all the meshes stored in {@link World.meshes}.
+     * @returns The first intersection found or 'null' if no intersection was found.
+     */
+    castRayFromVector(origin: THREE.Vector3, direction: THREE.Vector3, items?: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.Material | THREE.Material[], THREE.Object3DEventMap>[]): THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>> | null;
+    private intersect;
+    private filterClippingPlanes;
+}
+import * as THREE from "three";
+import { Disposable, Event } from "../../Types";
+/**
+ * A helper to easily get the real position of the mouse in the Three.js canvas to work with tools like the [raycaster](https://threejs.org/docs/#api/en/core/Raycaster), even if it has been transformed through CSS or doesn't occupy the whole screen.
+ */
+export declare class Mouse implements Disposable {
+    dom: HTMLCanvasElement;
+    private _event?;
+    private _position;
+    /** {@link Disposable.onDisposed} */
+    readonly onDisposed: Event<unknown>;
+    constructor(dom: HTMLCanvasElement);
+    /**
+     * The real position of the mouse of the Three.js canvas.
+     */
+    get position(): THREE.Vector2;
+    /** {@link Disposable.dispose} */
+    dispose(): void;
+    private getPositionY;
+    private getPositionX;
+    private updateMouseInfo;
+    private getDataObject;
+    private setupEvents;
+}
+import * as THREE from "three";
+import { BooleanSettingsControl, ColorSettingsControl, NumberSettingControl } from "../../Types";
+import { Configurator } from "../../ConfigManager";
+import { SimpleGrid } from "./simple-grid";
+type SimpleGridConfigType = {
+    visible: BooleanSettingsControl;
+    color: ColorSettingsControl;
+    primarySize: NumberSettingControl;
+    secondarySize: NumberSettingControl;
+    distance: NumberSettingControl;
+};
+/**
+ * Configuration interface for the {@link SimpleGrid}.
+ */
+export interface SimpleGridConfig {
+    /**
+     * Whether the grid is visible or not.
+     */
+    visible: boolean;
+    /**
+     * The color of the grid lines.
+     */
+    color: THREE.Color;
+    /**
+     * The size of the primary grid lines.
+     */
+    primarySize: number;
+    /**
+     * The size of the secondary grid lines.
+     */
+    secondarySize: number;
+    /**
+     * The distance at which the grid lines start to fade away.
+     */
+    distance: number;
+}
+export declare class SimpleGridConfigManager extends Configurator<SimpleGrid, SimpleGridConfigType> {
+    protected _config: SimpleGridConfigType;
+    /**
+     * Whether the grid is visible or not.
+     */
+    get visible(): boolean;
+    /**
+     * Whether the grid is visible or not.
+     */
+    set visible(value: boolean);
+    /**
+     * The color of the grid lines.
+     */
+    get color(): THREE.Color;
+    /**
+     * The color of the grid lines.
+     */
+    set color(value: THREE.Color);
+    /**
+     * The size of the primary grid lines.
+     */
+    get primarySize(): number;
+    /**
+     * The size of the primary grid lines.
+     */
+    set primarySize(value: number);
+    /**
+     * The size of the secondary grid lines.
+     */
+    get secondarySize(): number;
+    /**
+     * The size of the secondary grid lines.
+     */
+    set secondarySize(value: number);
+    /**
+     * The distance at which the grid lines start to fade away.
+     */
+    get distance(): number;
+    /**
+     * The distance at which the grid lines start to fade away.
+     */
+    set distance(value: number);
+}
+export {};
+import * as THREE from "three";
+import { Hideable, Event, World, Disposable, Configurable } from "../../Types";
+import { Components } from "../../Components";
+import { SimpleGridConfig, SimpleGridConfigManager } from "./simple-grid-config";
+/**
+ * An infinite grid. Created by [fyrestar](https://github.com/Fyrestar/THREE.InfiniteGridHelper) and translated to typescript by [dkaraush](https://github.com/dkaraush/THREE.InfiniteGridHelper/blob/master/InfiniteGridHelper.ts).
+ */
+export declare class SimpleGrid implements Hideable, Disposable, Configurable<SimpleGridConfigManager, SimpleGridConfig> {
+    /** {@link Disposable.onDisposed} */
+    readonly onDisposed: Event<unknown>;
+    /** {@link Configurable.onSetup} */
+    readonly onSetup: Event<unknown>;
+    /** {@link Configurable.isSetup} */
+    isSetup: boolean;
+    /** The world instance to which this Raycaster belongs. */
+    world: World;
+    /** The components instance to which this grid belongs. */
+    components: Components;
+    /** {@link Configurable.config} */
+    config: SimpleGridConfigManager;
+    protected _defaultConfig: SimpleGridConfig;
+    /** {@link Hideable.visible} */
+    get visible(): boolean;
+    /** {@link Hideable.visible} */
+    set visible(visible: boolean);
+    /** The material of the grid. */
+    get material(): THREE.ShaderMaterial;
+    /**
+     * Whether the grid should fade away with distance. Recommended to be true for
+     * perspective cameras and false for orthographic cameras.
+     */
+    get fade(): boolean;
+    /**
+     * Whether the grid should fade away with distance. Recommended to be true for
+     * perspective cameras and false for orthographic cameras.
+     */
+    set fade(active: boolean);
+    /** The Three.js mesh that contains the infinite grid. */
+    readonly three: THREE.Mesh;
+    private _fade;
+    constructor(components: Components, world: World);
+    /** {@link Configurable.setup} */
+    setup(config?: Partial<SimpleGridConfig>): void;
+    /** {@link Disposable.dispose} */
+    dispose(): void;
+    private setupEvents;
+    private updateZoom;
+}
+import * as THREE from "three";
+import { Components } from "../../Components";
+import { AsyncEvent, Configurable, Event, World } from "../../Types";
+import { CullerRendererConfig, CullerRendererConfigManager } from "./culler-renderer-config";
+/**
+ * A base renderer to determine visibility on screen.
+ */
+export declare class CullerRenderer implements Configurable<CullerRendererConfigManager, CullerRendererConfig> {
+    /** {@link Configurable.onSetup} */
+    readonly onSetup: Event<unknown>;
+    /** {@link Disposable.onDisposed} */
+    readonly onDisposed: Event<string>;
+    /**
+     * Fires after making the visibility check to the meshes. It lists the
+     * meshes that are currently visible, and the ones that were visible
+     * just before but not anymore.
+     */
+    readonly onViewUpdated: Event<any> | AsyncEvent<any>;
+    /**
+     * Whether this renderer is active or not. If not, it won't render anything.
+     */
+    enabled: boolean;
+    /**
+     * Needs to check whether there are objects that need to be hidden or shown.
+     * You can bind this to the camera movement, to a certain interval, etc.
+     */
+    needsUpdate: boolean;
+    /** The components instance to which this renderer belongs. */
+    components: Components;
+    /** The render target used to render the visibility scene. */
+    renderTarget: THREE.WebGLRenderTarget<THREE.Texture>;
+    /**
+     * The size of the buffer where the result of the visibility check is stored.
+     */
+    bufferSize: number;
+    /**
+     * The buffer when the result of the visibility check is stored.
+     */
+    buffer: Uint8Array;
+    /**
+     * Flag to indicate if the renderer shouldn't update the visibility.
+     */
+    preventUpdate: boolean;
+    /** {@link Configurable.config} */
+    config: CullerRendererConfigManager;
+    /** {@link Configurable.isSetup} */
+    isSetup: boolean;
+    /** The world instance to which this renderer belongs. */
+    readonly world: World;
+    /** The THREE.js renderer used to make the visibility test. */
+    readonly renderer: THREE.WebGLRenderer;
+    protected _defaultConfig: CullerRendererConfig;
+    protected readonly worker: Worker;
+    protected readonly scene: THREE.Scene;
+    private _availableColor;
+    protected _isWorkerBusy: boolean;
+    constructor(components: Components, world: World);
+    /** {@link Disposable.dispose} */
+    dispose(): void;
+    /**
+     * The function that the culler uses to reprocess the scene. Generally it's
+     * better to call needsUpdate, but you can also call this to force it.
+     * @param force if true, it will refresh the scene even if needsUpdate is
+     * not true.
+     */
+    updateVisibility: (force?: boolean) => Promise<void>;
+    setup(config?: Partial<CullerRendererConfig>): void;
+    protected getAvailableColor(): {
+        r: number;
+        g: number;
+        b: number;
+        code: string;
+    };
+    protected increaseColor(): void;
+    protected decreaseColor(): void;
+}
+export declare function readPixelsAsync(gl: WebGL2RenderingContext, x: number, y: number, w: number, h: number, format: any, type: any, dest: ArrayBufferView): Promise<ArrayBufferView>;
+import * as THREE from "three";
+import { CullerRenderer } from "./culler-renderer";
+import { Components } from "../../Components";
+import { Event, World, Disposable } from "../../Types";
+/**
+ * A renderer to hide/show meshes depending on their visibility from the user's point of view.
+ */
+export declare class MeshCullerRenderer extends CullerRenderer implements Disposable {
+    /**
+     * Event triggered when the visibility of meshes is updated.
+     * Contains two sets: seen and unseen.
+     */
+    readonly onViewUpdated: Event<{
+        seen: Set<THREE.Mesh>;
+        unseen: Set<THREE.Mesh>;
+    }>;
+    /**
+     * Map of color code to THREE.InstancedMesh.
+     * Used to keep track of color-coded meshes.
+     */
+    colorMeshes: Map<string, THREE.InstancedMesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.Material | THREE.Material[]>>;
+    /**
+     * @deprecated use config.threshold instead.
+     */
+    get threshold(): number;
+    /**
+     * @deprecated use config.threshold instead.
+     */
+    set threshold(value: number);
+    private _colorCodeMeshMap;
+    private _meshIDColorCodeMap;
+    private _currentVisibleMeshes;
+    private _recentlyHiddenMeshes;
+    private readonly _transparentMat;
+    constructor(components: Components, world: World);
+    /** {@link Disposable.dispose} */
+    dispose(): void;
+    /**
+     * Adds a mesh to the culler. When the mesh is not visibile anymore, it will be removed from the scene. When it's visible again, it will be added to the scene.
+     * @param mesh - The mesh to add. It can be a regular THREE.Mesh or an instance of THREE.InstancedMesh.
+     */
+    add(mesh: THREE.Mesh | THREE.InstancedMesh): void;
+    /**
+     * Removes a mesh from the culler, so its visibility is not controlled by the culler anymore.
+     * When the mesh is removed, it will be hidden from the scene and its color-coded mesh will be destroyed.
+     * @param mesh - The mesh to remove. It can be a regular THREE.Mesh or an instance of THREE.InstancedMesh.
+     */
+    remove(mesh: THREE.Mesh | THREE.InstancedMesh): void;
+    /**
+     * Updates the given instanced meshes inside the culler. You should use this if you change the count property, e.g. when changing the visibility of fragments.
+     *
+     * @param meshes - The meshes to update.
+     *
+     * @returns {void}
+     */
+    updateInstanced(meshes: Iterable<THREE.InstancedMesh>): void;
+    private handleWorkerMessage;
+    private getAvailableMaterial;
+}
+import { NavigationMode } from "./types";
+import { OrthoPerspectiveCamera } from "../index";
+/**
+ * A {@link NavigationMode} that allows first person navigation, simulating FPS video games.
+ */
+export declare class FirstPersonMode implements NavigationMode {
+    private camera;
+    /** {@link NavigationMode.enabled} */
+    enabled: boolean;
+    /** {@link NavigationMode.id} */
+    readonly id = "FirstPerson";
+    constructor(camera: OrthoPerspectiveCamera);
+    /** {@link NavigationMode.set} */
+    set(active: boolean): void;
+    private setupFirstPersonCamera;
+}
+import { NavigationMode } from "./types";
+import { OrthoPerspectiveCamera } from "../index";
+/**
+ * A {@link NavigationMode} that allows 3D navigation and panning like in many 3D and CAD softwares.
+ */
+export declare class OrbitMode implements NavigationMode {
+    camera: OrthoPerspectiveCamera;
+    /** {@link NavigationMode.enabled} */
+    enabled: boolean;
+    /** {@link NavigationMode.id} */
+    readonly id = "Orbit";
+    constructor(camera: OrthoPerspectiveCamera);
+    /** {@link NavigationMode.set} */
+    set(active: boolean): void;
+    private activateOrbitControls;
+}
+import * as THREE from "three";
+import { CameraProjection } from "./types";
+import { Event } from "../../Types";
+import { OrthoPerspectiveCamera } from "../index";
+/**
+ * Object to control the {@link CameraProjection} of the {@link OrthoPerspectiveCamera}.
+ */
+export declare class ProjectionManager {
+    /**
+     * Event that fires when the {@link CameraProjection} changes.
+     */
+    readonly onChanged: Event<THREE.PerspectiveCamera | THREE.OrthographicCamera>;
+    /**
+     * Current projection mode of the camera.
+     * Default is "Perspective".
+     */
+    current: CameraProjection;
+    /**
+     * The camera controlled by this ProjectionManager.
+     * It can be either a PerspectiveCamera or an OrthographicCamera.
+     */
+    camera: THREE.PerspectiveCamera | THREE.OrthographicCamera;
+    /** Match Ortho zoom with Perspective distance when changing projection mode */
+    matchOrthoDistanceEnabled: boolean;
+    private _component;
+    private _previousDistance;
+    constructor(camera: OrthoPerspectiveCamera);
+    /**
+     * Sets the {@link CameraProjection} of the {@link OrthoPerspectiveCamera}.
+     *
+     * @param projection - the new projection to set. If it is the current projection,
+     * it will have no effect.
+     */
+    set(projection: CameraProjection): Promise<void>;
+    /**
+     * Changes the current {@link CameraProjection} from Ortographic to Perspective
+     * and vice versa.
+     */
+    toggle(): Promise<void>;
+    private setOrthoCamera;
+    private getPerspectiveDims;
+    private setupOrthoCamera;
+    private getDistance;
+    private setPerspectiveCamera;
+}
+import { NavigationMode } from "./types";
+import { OrthoPerspectiveCamera } from "../index";
+/**
+ * A {@link NavigationMode} that allows to navigate floorplans in 2D, like many BIM tools.
+ */
+export declare class PlanMode implements NavigationMode {
+    private camera;
+    /** {@link NavigationMode.enabled} */
+    enabled: boolean;
+    /** {@link NavigationMode.id} */
+    readonly id = "Plan";
+    private mouseAction1?;
+    private mouseAction2?;
+    private mouseInitialized;
+    private readonly defaultAzimuthSpeed;
+    private readonly defaultPolarSpeed;
+    constructor(camera: OrthoPerspectiveCamera);
+    /** {@link NavigationMode.set} */
+    set(active: boolean): void;
+}
 /**
  * A rule for the {@link IfcFinder} to search items based on their category.
  */
@@ -5134,6 +4930,32 @@ export declare abstract class IfcFinderQuery {
     protected getCategoryFromLine(line: string): string | null;
     protected getAttributesFromLine(line: string): string[] | null;
 }
+/**
+ * The projection system of the camera.
+ */
+export type CameraProjection = "Perspective" | "Orthographic";
+/**
+ * The extensible list of supported navigation modes.
+ */
+export type NavModeID = "Orbit" | "FirstPerson" | "Plan";
+/**
+ * An object that determines the behavior of the camera controls and the user input (e.g. 2D floor plan mode, first person mode, etc).
+ */
+export interface NavigationMode {
+    /** The unique ID of this navigation mode. */
+    id: NavModeID;
+    /**
+     * Enable or disable this navigation mode.
+     * When a new navigation mode is enabled, the previous navigation mode
+     * must be disabled.
+     *
+     * @param active - whether to enable or disable this mode.
+     * @param options - any additional data required to enable or disable it.
+     * */
+    set: (active: boolean, options?: any) => void;
+    /** Whether this navigation mode is active or not. */
+    enabled: boolean;
+}
 import * as FRAGS from "@thatopen/fragments";
 import { IfcFinderRule, SerializedQuery } from "./types";
 import { IfcFinderQuery } from "./ifc-finder-query";
@@ -5168,6 +4990,26 @@ export declare class IfcBasicQuery extends IfcFinderQuery {
      */
     update(modelID: string, file: File): Promise<void>;
     protected findInLines(modelID: string, lines: string[]): void;
+}
+import { IfcFragmentSettings } from "../../IfcLoader/src";
+/**
+ * Settings for streaming IFC geometry and assets. Extends {@link IfcFragmentSettings} to inherit common settings.
+ */
+export declare class IfcStreamingSettings extends IfcFragmentSettings {
+    /**
+     * Minimum number of geometries to be streamed.
+     * Defaults to 10 geometries.
+     */
+    minGeometrySize: number;
+    /**
+     * Minimum amount of assets to be streamed.
+     * Defaults to 1000 assets.
+     */
+    minAssetsSize: number;
+    /**
+     * Maximum amount of triangles per fragment. Useful for controlling the maximum size of fragment files.
+     */
+    maxTriangles: number | null;
 }
 import * as FRAGS from "@thatopen/fragments";
 import { IfcFinderQuery } from "./ifc-finder-query";
@@ -5205,6 +5047,174 @@ export declare class IfcPropertyQuery extends IfcFinderQuery {
     update(modelID: string, file: File): Promise<void>;
     protected findInLines(modelID: string, lines: string[]): void;
 }
+/**
+ * A dictionary of geometries streamed from a server. Each geometry is identified by a unique number (id), and contains information about its bounding box, whether it has holes, and an optional file path for the geometry data.
+ */
+export interface StreamedGeometries {
+    [id: number]: {
+        /** The bounding box of the geometry as a Float32Array. */
+        boundingBox: Float32Array;
+        /** A boolean indicating whether the geometry has holes. */
+        hasHoles: boolean;
+        /** An optional file path for the geometry data. */
+        geometryFile?: string;
+    };
+}
+/**
+ * A streamed asset, which consists of multiple geometries. Each geometry in the asset is identified by a unique number (geometryID), and contains information about its transformation and color.
+ */
+export interface StreamedAsset {
+    /** The unique identifier of the asset. */
+    id: number;
+    /** An array of geometries associated with the asset. */
+    geometries: {
+        /** The unique identifier of the geometry. */
+        geometryID: number;
+        /** The transformation matrix of the geometry as a number array. */
+        transformation: number[];
+        /** The color of the geometry as a number array. */
+        color: number[];
+    }[];
+}
+export type IfcVersion = "IFC2X3" | "IFC4" | "IFC4X3_ADD2";
+export type IDSFacetParameterName = "Name" | "PredefinedType" | "Value" | "System" | "URI" | "PropertySet" | "BaseName" | "DataType" | "Value" | "Entity" | "Relation";
+export type IDSFacetType = "Entity" | "Attribute" | "Property" | "Classification" | "Material" | "PartOf";
+export type IDSSimpleCardinality = "required" | "prohibited";
+export type IDSConditionalCardinaltiy = IDSSimpleCardinality | "optional";
+export interface IDSSimpleParameter {
+    type: "simple";
+    parameter: string | number | boolean;
+}
+export interface IDSEnumerationParameter {
+    type: "enumeration";
+    parameter: string[] | number[] | boolean[];
+}
+export interface IDSPatternParameter {
+    type: "pattern";
+    parameter: string;
+}
+export interface IDSBoundsParameter {
+    type: "bounds";
+    parameter: {
+        min?: number;
+        minInclusive?: boolean;
+        max?: number;
+        maxInclusive?: boolean;
+    };
+}
+export interface IDSLengthParameter {
+    type: "length";
+    parameter: {
+        min?: number;
+        length?: number;
+        max?: number;
+    };
+}
+export type IDSRestrictionParameter = IDSEnumerationParameter | IDSPatternParameter | IDSBoundsParameter | IDSLengthParameter;
+export type IDSFacetParameter = IDSSimpleParameter | IDSRestrictionParameter;
+export interface IDSCheck {
+    parameter: IDSFacetParameterName;
+    currentValue: string | number | boolean | null;
+    requiredValue: any;
+    pass: boolean;
+}
+/**
+ * Represents the result of a check performed by an IDSFacet test.
+ */
+export interface IDSCheckResult {
+    guid?: string;
+    expressID: number;
+    pass: boolean;
+    checks: IDSCheck[];
+    cardinality: IDSConditionalCardinaltiy;
+}
+export interface IDSInfo {
+    title: string;
+    description?: string;
+    copyright?: string;
+    version?: string;
+    author?: string;
+    date?: Date;
+    purpose?: string;
+    milestone?: string;
+}
+export interface IDSSpecificationData {
+    name: string;
+    ifcVersion: Set<IfcVersion>;
+    identifier: string;
+    description?: string;
+    instructions?: string;
+    requirementsDescription?: string;
+}
+import * as FRAGS from "@thatopen/fragments";
+import { Components } from "../../../core/Components";
+import { DataSet } from "../../../core/Types";
+import { IDSCheckResult, IDSSpecificationData, IfcVersion } from "./types";
+import { IDSFacet } from "./facets";
+/**
+ * Represents a single specification from the Information Delivery Specification (IDS) standard.
+ *
+ * @remarks This class provides methods for testing a model against the specification,
+ * as well as serializing the specification into XML format.
+ */
+export declare class IDSSpecification implements IDSSpecificationData {
+    name: string;
+    ifcVersion: Set<IfcVersion>;
+    readonly identifier: string;
+    description?: string;
+    instructions?: string;
+    requirementsDescription?: string;
+    applicability: DataSet<IDSFacet>;
+    requirements: DataSet<IDSFacet>;
+    protected components: Components;
+    constructor(components: Components, name: string, ifcVersion: IfcVersion[]);
+    set(data: Partial<IDSSpecificationData>): this;
+    /**
+     * Tests the model to test against the specification's requirements.
+     *
+     * @param model - The model to be tested.
+     * @returns An array representing the test results.
+     * If no requirements are defined for the specification, an empty array is returned.
+     */
+    test(model: FRAGS.FragmentsGroup): Promise<IDSCheckResult[]>;
+    /**
+     * Serializes the IDSSpecification instance into XML format.
+     *
+     * @remarks This method is not meant to be used directly. It is used by the IDSSpecifications component.
+     *
+     * @returns The XML representation of the IDSSpecification.
+     */
+    serialize(): string;
+}
+import * as THREE from "three";
+import * as WEBIFC from "web-ifc";
+import * as FRAGS from "@thatopen/fragments";
+export declare class CivilReader {
+    defLineMat: THREE.LineBasicMaterial;
+    read(webIfc: WEBIFC.IfcAPI): {
+        alignments: Map<number, FRAGS.Alignment>;
+        coordinationMatrix: THREE.Matrix4;
+    } | undefined;
+    get(civilItems: any): {
+        alignments: Map<number, FRAGS.Alignment>;
+        coordinationMatrix: THREE.Matrix4;
+    } | undefined;
+    private getCurves;
+}
+import * as WEBIFC from "web-ifc";
+export declare class IfcMetadataReader {
+    getNameInfo(webIfc: WEBIFC.IfcAPI): Record<string, any>;
+    getDescriptionInfo(webIfc: WEBIFC.IfcAPI): Record<string, any>;
+}
+import { Components } from "../../../../core/Components";
+import { IDSFacet } from "../facets";
+export declare const createEntityFacets: (components: Components, elements: any) => IDSFacet[];
+import { Components } from "../../../../core/Components";
+import { IDSFacet } from "../facets";
+export declare const createAttributeFacets: (components: Components, elements: any) => IDSFacet[];
+import { Components } from "../../../../core/Components";
+import { IDSFacet } from "../facets";
+export declare const createClassificationFacets: (components: Components, elements: any) => IDSFacet[];
 import { IfcFragmentSettings } from "../../IfcLoader/src";
 /**
  * Settings for streaming properties. Extends {@link IfcFragmentSettings} to inherit common settings.
@@ -5215,6 +5225,105 @@ export declare class PropertiesStreamingSettings extends IfcFragmentSettings {
      * Defaults to 100 properties.
      */
     propertiesSize: number;
+}
+import * as THREE from "three";
+import { Hideable, Disposable, Event, World } from "../../Types";
+import { Components } from "../../Components";
+/**
+ * Each of the clipping planes created by the clipper.
+ */
+export declare class SimplePlane implements Disposable, Hideable {
+    /** Event that fires when the user starts dragging a clipping plane. */
+    readonly onDraggingStarted: Event<unknown>;
+    /** Event that fires when the user stops dragging a clipping plane. */
+    readonly onDraggingEnded: Event<unknown>;
+    /** {@link Disposable.onDisposed} */
+    readonly onDisposed: Event<unknown>;
+    /**
+     * The normal vector of the clipping plane.
+     */
+    readonly normal: THREE.Vector3;
+    /**
+     * The origin point of the clipping plane.
+     */
+    readonly origin: THREE.Vector3;
+    /**
+     * The THREE.js Plane object representing the clipping plane.
+     */
+    readonly three: THREE.Plane;
+    /** The components instance to which this plane belongs. */
+    components: Components;
+    /** The world instance to which this plane belongs. */
+    world: World;
+    /** A custom string to identify what this plane is used for. */
+    type: string;
+    protected readonly _helper: THREE.Object3D;
+    protected _visible: boolean;
+    protected _enabled: boolean;
+    private _controlsActive;
+    private readonly _arrowBoundBox;
+    private readonly _planeMesh;
+    private readonly _controls;
+    private readonly _hiddenMaterial;
+    /**
+     * Getter for the enabled state of the clipping plane.
+     * @returns {boolean} The current enabled state.
+     */
+    get enabled(): boolean;
+    /**
+     * Setter for the enabled state of the clipping plane.
+     * Updates the clipping plane state in the renderer and throws an error if no renderer is found.
+     * @param {boolean} state - The new enabled state.
+     */
+    set enabled(state: boolean);
+    /** {@link Hideable.visible } */
+    get visible(): boolean;
+    /** {@link Hideable.visible } */
+    set visible(state: boolean);
+    /** The meshes used for raycasting */
+    get meshes(): THREE.Mesh[];
+    /** The material of the clipping plane representation. */
+    get planeMaterial(): THREE.Material | THREE.Material[];
+    /** The material of the clipping plane representation. */
+    set planeMaterial(material: THREE.Material | THREE.Material[]);
+    /** The size of the clipping plane representation. */
+    get size(): number;
+    /** Sets the size of the clipping plane representation. */
+    set size(size: number);
+    /**
+     * Getter for the helper object of the clipping plane.
+     * The helper object is a THREE.Object3D that contains the clipping plane mesh and other related objects.
+     * It is used for positioning, rotating, and scaling the clipping plane in the 3D scene.
+     *
+     * @returns {THREE.Object3D} The helper object of the clipping plane.
+     */
+    get helper(): THREE.Object3D<THREE.Object3DEventMap>;
+    constructor(components: Components, world: World, origin: THREE.Vector3, normal: THREE.Vector3, material: THREE.Material, size?: number, activateControls?: boolean);
+    /**
+     * Sets the clipping plane's normal and origin from the given normal and point.
+     * This method resets the clipping plane's state, updates the normal and origin,
+     * and positions the helper object accordingly.
+     *
+     * @param normal - The new normal vector for the clipping plane.
+     * @param point - The new origin point for the clipping plane.
+     *
+     * @returns {void}
+     */
+    setFromNormalAndCoplanarPoint(normal: THREE.Vector3, point: THREE.Vector3): void;
+    /** {@link Updateable.update} */
+    update: () => void;
+    /** {@link Disposable.dispose} */
+    dispose(): void;
+    private reset;
+    protected toggleControls(state: boolean): void;
+    private newTransformControls;
+    private initializeControls;
+    private createArrowBoundingBox;
+    private changeDrag;
+    private notifyDraggingChanged;
+    private preventCameraMovement;
+    private newHelper;
+    private static newPlaneMesh;
 }
 import { IfcRelName } from "./types";
 type IfcRelAttributePosition = {
@@ -5246,15 +5355,6 @@ export type IfcRelationNames = [
 export type IfcRelName = IfcRelationNames[number];
 import { IDSFacetParameter } from "../types";
 export declare const getParameterValue: (property: any) => IDSFacetParameter | undefined;
-import { Components } from "../../../../core/Components";
-import { IDSFacet } from "../facets";
-export declare const createEntityFacets: (components: Components, elements: any) => IDSFacet[];
-import { Components } from "../../../../core/Components";
-import { IDSFacet } from "../facets";
-export declare const createAttributeFacets: (components: Components, elements: any) => IDSFacet[];
-import { Components } from "../../../../core/Components";
-import { IDSFacet } from "../facets";
-export declare const createClassificationFacets: (components: Components, elements: any) => IDSFacet[];
 import * as WEBIFC from "web-ifc";
 export type RelationsMap = Map<number, Map<number, number[]>>;
 export interface ModelsRelationMap {
@@ -5327,99 +5427,6 @@ export interface EntitiesRelatedEvent {
     relatingIDs: number[];
     /** The IDs of the entities that are being related. */
     relatedIDs: number[];
-}
-import { BooleanSettingsControl, NumberSettingControl } from "../../Types";
-import { Configurator } from "../../ConfigManager";
-import { CullerRenderer } from "../index";
-type CullerRendererConfigType = {
-    enabled: BooleanSettingsControl;
-    width: NumberSettingControl;
-    height: NumberSettingControl;
-    updateInterval: NumberSettingControl;
-    autoUpdate: BooleanSettingsControl;
-    renderDebugFrame: BooleanSettingsControl;
-    threshold: NumberSettingControl;
-};
-/**
- * Configuration interface for the {@link CullerRenderer}.
- */
-export interface CullerRendererConfig {
-    /**
-     * Whether the culler renderer should make renders or not.
-     */
-    enabled: boolean;
-    /**
-     * Width of the render target used for visibility checks.
-     */
-    width: number;
-    /**
-     * Height of the render target used for visibility checks.
-     * Default value is 512.
-     */
-    height: number;
-    /**
-     * Whether the visibility check should be performed automatically.
-     * Default value is true.
-     */
-    autoUpdate: boolean;
-    /**
-     * Interval in milliseconds at which the visibility check should be performed.
-     */
-    updateInterval: number;
-    /**
-     * Whether to render the frame use to debug the culler behavior.
-     */
-    renderDebugFrame: boolean;
-    /**
-     * Pixels in screen a geometry must occupy to be considered "seen".
-     * Default value is 100.
-     */
-    threshold: number;
-}
-/**
- * Settings to configure the CullerRenderer.
- */
-export declare class CullerRendererConfigManager extends Configurator<CullerRenderer, CullerRendererConfigType> {
-    protected _config: CullerRendererConfigType;
-    private _interval;
-    get enabled(): boolean;
-    set enabled(value: boolean);
-    get width(): number;
-    set width(value: number);
-    get height(): number;
-    set height(value: number);
-    get autoUpdate(): boolean;
-    set autoUpdate(value: boolean);
-    get updateInterval(): number;
-    set updateInterval(value: number);
-    get renderDebugFrame(): boolean;
-    set renderDebugFrame(value: boolean);
-    get threshold(): number;
-    set threshold(value: number);
-    setWidthHeight(width: number, height: number): void;
-    setAutoAndInterval(auto: boolean, interval: number): void;
-    private resetRenderTarget;
-    private resetInterval;
-}
-export {};
-export type BCFVersion = "2.1" | "3";
-export interface BCFTopic {
-    guid: string;
-    serverAssignedId?: string;
-    type: string;
-    status: string;
-    title: string;
-    priority?: string;
-    index?: number;
-    labels: Set<string>;
-    creationDate: Date;
-    creationAuthor: string;
-    modifiedDate?: Date;
-    modifiedAuthor?: string;
-    dueDate?: Date;
-    assignedTo?: string;
-    description?: string;
-    stage?: string;
 }
 import { Components } from "../../../core/Components";
 import { Viewpoint } from "../../../core/Viewpoints";
@@ -5547,6 +5554,25 @@ export declare class Topic implements BCFTopic {
      * '''
      */
     serialize(): string;
+}
+export type BCFVersion = "2.1" | "3";
+export interface BCFTopic {
+    guid: string;
+    serverAssignedId?: string;
+    type: string;
+    status: string;
+    title: string;
+    priority?: string;
+    index?: number;
+    labels: Set<string>;
+    creationDate: Date;
+    creationAuthor: string;
+    modifiedDate?: Date;
+    modifiedAuthor?: string;
+    dueDate?: Date;
+    assignedTo?: string;
+    description?: string;
+    stage?: string;
 }
 import { Topic } from "..";
 import { Viewpoint } from "../../../core/Viewpoints";
@@ -5709,116 +5735,90 @@ export declare class BCFTopicsConfigManager extends Configurator<BCFTopics, BCFT
     set ignoreIncompleteTopicsOnImport(value: boolean);
 }
 export {};
-export type IfcVersion = "IFC2X3" | "IFC4" | "IFC4X3_ADD2";
-export type IDSFacetParameterName = "Name" | "PredefinedType" | "Value" | "System" | "URI" | "PropertySet" | "BaseName" | "DataType" | "Value" | "Entity" | "Relation";
-export type IDSFacetType = "Entity" | "Attribute" | "Property" | "Classification" | "Material" | "PartOf";
-export type IDSSimpleCardinality = "required" | "prohibited";
-export type IDSConditionalCardinaltiy = IDSSimpleCardinality | "optional";
-export interface IDSSimpleParameter {
-    type: "simple";
-    parameter: string | number | boolean;
+import * as WEBIFC from "web-ifc";
+import * as THREE from "three";
+export declare class Units {
+    factor: number;
+    complement: number;
+    apply(matrix: THREE.Matrix4): void;
+    setUp(webIfc: WEBIFC.IfcAPI): void;
+    private getLengthUnits;
+    private getScaleMatrix;
 }
-export interface IDSEnumerationParameter {
-    type: "enumeration";
-    parameter: string[] | number[] | boolean[];
-}
-export interface IDSPatternParameter {
-    type: "pattern";
-    parameter: string;
-}
-export interface IDSBoundsParameter {
-    type: "bounds";
-    parameter: {
-        min?: number;
-        minInclusive?: boolean;
-        max?: number;
-        maxInclusive?: boolean;
-    };
-}
-export interface IDSLengthParameter {
-    type: "length";
-    parameter: {
-        min?: number;
-        length?: number;
-        max?: number;
-    };
-}
-export type IDSRestrictionParameter = IDSEnumerationParameter | IDSPatternParameter | IDSBoundsParameter | IDSLengthParameter;
-export type IDSFacetParameter = IDSSimpleParameter | IDSRestrictionParameter;
-export interface IDSCheck {
-    parameter: IDSFacetParameterName;
-    currentValue: string | number | boolean | null;
-    requiredValue: any;
-    pass: boolean;
+import { BooleanSettingsControl, NumberSettingControl } from "../../Types";
+import { Configurator } from "../../ConfigManager";
+import { CullerRenderer } from "../index";
+type CullerRendererConfigType = {
+    enabled: BooleanSettingsControl;
+    width: NumberSettingControl;
+    height: NumberSettingControl;
+    updateInterval: NumberSettingControl;
+    autoUpdate: BooleanSettingsControl;
+    renderDebugFrame: BooleanSettingsControl;
+    threshold: NumberSettingControl;
+};
+/**
+ * Configuration interface for the {@link CullerRenderer}.
+ */
+export interface CullerRendererConfig {
+    /**
+     * Whether the culler renderer should make renders or not.
+     */
+    enabled: boolean;
+    /**
+     * Width of the render target used for visibility checks.
+     */
+    width: number;
+    /**
+     * Height of the render target used for visibility checks.
+     * Default value is 512.
+     */
+    height: number;
+    /**
+     * Whether the visibility check should be performed automatically.
+     * Default value is true.
+     */
+    autoUpdate: boolean;
+    /**
+     * Interval in milliseconds at which the visibility check should be performed.
+     */
+    updateInterval: number;
+    /**
+     * Whether to render the frame use to debug the culler behavior.
+     */
+    renderDebugFrame: boolean;
+    /**
+     * Pixels in screen a geometry must occupy to be considered "seen".
+     * Default value is 100.
+     */
+    threshold: number;
 }
 /**
- * Represents the result of a check performed by an IDSFacet test.
+ * Settings to configure the CullerRenderer.
  */
-export interface IDSCheckResult {
-    guid?: string;
-    expressID: number;
-    pass: boolean;
-    checks: IDSCheck[];
-    cardinality: IDSConditionalCardinaltiy;
+export declare class CullerRendererConfigManager extends Configurator<CullerRenderer, CullerRendererConfigType> {
+    protected _config: CullerRendererConfigType;
+    private _interval;
+    get enabled(): boolean;
+    set enabled(value: boolean);
+    get width(): number;
+    set width(value: number);
+    get height(): number;
+    set height(value: number);
+    get autoUpdate(): boolean;
+    set autoUpdate(value: boolean);
+    get updateInterval(): number;
+    set updateInterval(value: number);
+    get renderDebugFrame(): boolean;
+    set renderDebugFrame(value: boolean);
+    get threshold(): number;
+    set threshold(value: number);
+    setWidthHeight(width: number, height: number): void;
+    setAutoAndInterval(auto: boolean, interval: number): void;
+    private resetRenderTarget;
+    private resetInterval;
 }
-export interface IDSInfo {
-    title: string;
-    description?: string;
-    copyright?: string;
-    version?: string;
-    author?: string;
-    date?: Date;
-    purpose?: string;
-    milestone?: string;
-}
-export interface IDSSpecificationData {
-    name: string;
-    ifcVersion: Set<IfcVersion>;
-    identifier: string;
-    description?: string;
-    instructions?: string;
-    requirementsDescription?: string;
-}
-import * as FRAGS from "@thatopen/fragments";
-import { Components } from "../../../core/Components";
-import { DataSet } from "../../../core/Types";
-import { IDSCheckResult, IDSSpecificationData, IfcVersion } from "./types";
-import { IDSFacet } from "./facets";
-/**
- * Represents a single specification from the Information Delivery Specification (IDS) standard.
- *
- * @remarks This class provides methods for testing a model against the specification,
- * as well as serializing the specification into XML format.
- */
-export declare class IDSSpecification implements IDSSpecificationData {
-    name: string;
-    ifcVersion: Set<IfcVersion>;
-    readonly identifier: string;
-    description?: string;
-    instructions?: string;
-    requirementsDescription?: string;
-    applicability: DataSet<IDSFacet>;
-    requirements: DataSet<IDSFacet>;
-    protected components: Components;
-    constructor(components: Components, name: string, ifcVersion: IfcVersion[]);
-    set(data: Partial<IDSSpecificationData>): this;
-    /**
-     * Tests the model to test against the specification's requirements.
-     *
-     * @param model - The model to be tested.
-     * @returns An array representing the test results.
-     * If no requirements are defined for the specification, an empty array is returned.
-     */
-    test(model: FRAGS.FragmentsGroup): Promise<IDSCheckResult[]>;
-    /**
-     * Serializes the IDSSpecification instance into XML format.
-     *
-     * @remarks This method is not meant to be used directly. It is used by the IDSSpecifications component.
-     *
-     * @returns The XML representation of the IDSSpecification.
-     */
-    serialize(): string;
-}
+export {};
 import * as FRAGS from "@thatopen/fragments";
 import { IDSCheckResult, IDSFacetParameter } from "../types";
 import { Components } from "../../../../core/Components";
@@ -5831,6 +5831,21 @@ export declare class IDSAttribute extends IDSFacet {
     serialize(type: "applicability" | "requirement"): string;
     getEntities(): Promise<never[]>;
     test(entities: FRAGS.IfcProperties): Promise<IDSCheckResult[]>;
+}
+import * as FRAGS from "@thatopen/fragments";
+import { Components } from "../../../../core/Components";
+import { IDSFacet } from "./Facet";
+import { IDSCheck, IDSCheckResult, IDSFacetParameter } from "../types";
+export declare class IDSEntity extends IDSFacet {
+    facetType: "Entity";
+    name: IDSFacetParameter;
+    predefinedType?: IDSFacetParameter;
+    constructor(components: Components, name: IDSFacetParameter);
+    serialize(type: "applicability" | "requirement"): string;
+    getEntities(model: FRAGS.FragmentsGroup, collector?: FRAGS.IfcProperties): Promise<number[]>;
+    test(entities: FRAGS.IfcProperties, model: FRAGS.FragmentsGroup): Promise<IDSCheckResult[]>;
+    protected evalName(attrs: any, checks?: IDSCheck[]): Promise<boolean>;
+    protected evalPredefinedType(model: FRAGS.FragmentsGroup, attrs: any, checks?: IDSCheck[]): Promise<boolean | null>;
 }
 import * as FRAGS from "@thatopen/fragments";
 import { Components } from "../../../../core/Components";
@@ -5854,19 +5869,29 @@ export declare class IDSClassification extends IDSFacet {
     private evalURI;
 }
 import * as FRAGS from "@thatopen/fragments";
+import { IDSCheckResult, IDSFacetParameter } from "../types";
 import { Components } from "../../../../core/Components";
 import { IDSFacet } from "./Facet";
-import { IDSCheck, IDSCheckResult, IDSFacetParameter } from "../types";
-export declare class IDSEntity extends IDSFacet {
-    facetType: "Entity";
-    name: IDSFacetParameter;
-    predefinedType?: IDSFacetParameter;
-    constructor(components: Components, name: IDSFacetParameter);
+export declare class IDSProperty extends IDSFacet {
+    facetType: "Property";
+    propertySet: IDSFacetParameter;
+    baseName: IDSFacetParameter;
+    value?: IDSFacetParameter;
+    dataType?: string;
+    uri?: string;
+    private _unsupportedTypes;
+    constructor(components: Components, propertySet: IDSFacetParameter, baseName: IDSFacetParameter);
     serialize(type: "applicability" | "requirement"): string;
-    getEntities(model: FRAGS.FragmentsGroup, collector?: FRAGS.IfcProperties): Promise<number[]>;
+    getEntities(model: FRAGS.FragmentsGroup, collector?: FRAGS.IfcProperties): Promise<never[]>;
     test(entities: FRAGS.IfcProperties, model: FRAGS.FragmentsGroup): Promise<IDSCheckResult[]>;
-    protected evalName(attrs: any, checks?: IDSCheck[]): Promise<boolean>;
-    protected evalPredefinedType(model: FRAGS.FragmentsGroup, attrs: any, checks?: IDSCheck[]): Promise<boolean | null>;
+    private getItemsAttrName;
+    private getValueKey;
+    private simplifyPset;
+    private getTypePsets;
+    private getPsets;
+    private evalValue;
+    private evalDataType;
+    private evalURI;
 }
 import * as FRAGS from "@thatopen/fragments";
 import { Components } from "../../../../core/Components";
@@ -5896,38 +5921,11 @@ export declare abstract class IDSFacet {
 }
 import { BCFTopics } from "../..";
 export declare const extensionsImporter: (manager: BCFTopics, extensionsXML: string) => void;
-import * as FRAGS from "@thatopen/fragments";
-import { IDSCheckResult, IDSFacetParameter } from "../types";
-import { Components } from "../../../../core/Components";
-import { IDSFacet } from "./Facet";
-export declare class IDSProperty extends IDSFacet {
-    facetType: "Property";
-    propertySet: IDSFacetParameter;
-    baseName: IDSFacetParameter;
-    value?: IDSFacetParameter;
-    dataType?: string;
-    uri?: string;
-    private _unsupportedTypes;
-    constructor(components: Components, propertySet: IDSFacetParameter, baseName: IDSFacetParameter);
-    serialize(type: "applicability" | "requirement"): string;
-    getEntities(model: FRAGS.FragmentsGroup, collector?: FRAGS.IfcProperties): Promise<never[]>;
-    test(entities: FRAGS.IfcProperties, model: FRAGS.FragmentsGroup): Promise<IDSCheckResult[]>;
-    private getItemsAttrName;
-    private getValueKey;
-    private getPsetProps;
-    private getTypePsets;
-    private getPsets;
-    private evalValue;
-    private evalDataType;
-    private evalURI;
-}
 import { BufferGeometry } from "three";
 import * as THREE from "three";
 export declare class TransformHelper {
     getHelper(geometries: BufferGeometry[]): THREE.Object3D<THREE.Object3DEventMap>;
 }
-import { IDSFacetParameterName, IDSFacetParameter } from "../types";
-export declare const getParameterXML: (name: IDSFacetParameterName, parameter?: IDSFacetParameter) => string;
 import { IDSFacetParameter } from "../types";
 import { IDSFacet } from "./Facet";
 export declare class IdsMaterialFacet extends IDSFacet {
@@ -5937,32 +5935,6 @@ export declare class IdsMaterialFacet extends IDSFacet {
     serialize(type: "applicability" | "requirement"): string;
     getEntities(): Promise<number[]>;
     test(): Promise<import("../types").IDSCheckResult[]>;
-}
-import * as FRAGS from "@thatopen/fragments";
-import { Components } from "../../../../core/Components";
-import { IDSFacet } from "./Facet";
-import { IDSFacetParameter, IDSSimpleCardinality } from "../types";
-export declare class IDSPartOf extends IDSFacet {
-    facetType: "PartOf";
-    private _entityFacet;
-    private _entity;
-    set entity(value: {
-        name: IDSFacetParameter;
-        predefinedType?: IDSFacetParameter;
-    });
-    get entity(): {
-        name: IDSFacetParameter;
-        predefinedType?: IDSFacetParameter;
-    };
-    relation?: number;
-    cardinality: IDSSimpleCardinality;
-    constructor(components: Components, entity: {
-        name: IDSFacetParameter;
-        predefinedType?: IDSFacetParameter;
-    });
-    serialize(): string;
-    getEntities(model: FRAGS.FragmentsGroup, collector?: FRAGS.IfcProperties): Promise<number[]>;
-    test(entities: FRAGS.IfcProperties, model: FRAGS.FragmentsGroup): Promise<import("../types").IDSCheckResult[]>;
 }
 declare const actual: {
     186: {
@@ -6015,5 +5987,33 @@ interface V2Schema {
 type RelationsMap = Map<number, Map<number, {
     [ifcRel: number]: number[];
 }>>;
+import * as FRAGS from "@thatopen/fragments";
+import { Components } from "../../../../core/Components";
+import { IDSFacet } from "./Facet";
+import { IDSFacetParameter, IDSSimpleCardinality } from "../types";
+export declare class IDSPartOf extends IDSFacet {
+    facetType: "PartOf";
+    private _entityFacet;
+    private _entity;
+    set entity(value: {
+        name: IDSFacetParameter;
+        predefinedType?: IDSFacetParameter;
+    });
+    get entity(): {
+        name: IDSFacetParameter;
+        predefinedType?: IDSFacetParameter;
+    };
+    relation?: number;
+    cardinality: IDSSimpleCardinality;
+    constructor(components: Components, entity: {
+        name: IDSFacetParameter;
+        predefinedType?: IDSFacetParameter;
+    });
+    serialize(): string;
+    getEntities(model: FRAGS.FragmentsGroup, collector?: FRAGS.IfcProperties): Promise<number[]>;
+    test(entities: FRAGS.IfcProperties, model: FRAGS.FragmentsGroup): Promise<import("../types").IDSCheckResult[]>;
+}
+import { IDSFacetParameterName, IDSFacetParameter } from "../types";
+export declare const getParameterXML: (name: IDSFacetParameterName, parameter?: IDSFacetParameter) => string;
 
 }
