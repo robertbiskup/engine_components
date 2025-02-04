@@ -9,9 +9,9 @@
     "Harry Collin (https://github.com/harrycollin)"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/ThatOpen/engine_components/tree/main/packages/components-front#readme",
+  "homepage": "https://github.com/pawelsocha1/engine_components/tree/main/packages/components-front#readme",
   "bugs": {
-    "url": "https://github.com/ThatOpen/engine_components/issues"
+    "url": "https://github.com/pawelsocha1/engine_components/issues"
   },
   "type": "module",
   "main": "dist/index.js",
@@ -21,7 +21,8 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ThatOpen/engine_components/tree/main/packages/components-front.git"
+    "url": "git+https://github.com/pawelsocha1/engine_components.git",
+    "directory": "packages/components-front"
   },
   "packageManager": "yarn@3.2.1",
   "scripts": {

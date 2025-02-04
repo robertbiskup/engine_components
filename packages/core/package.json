@@ -9,9 +9,9 @@
     "Harry Collin (https://github.com/harrycollin)"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/ThatOpen/engine_components/tree/main/packages/components#readme",
+  "homepage": "https://github.com/pawelsocha1/engine_components/tree/main/packages/components#readme",
   "bugs": {
-    "url": "https://github.com/ThatOpen/engine_components/issues"
+    "url": "https://github.com/pawelsocha1/engine_components/issues"
   },
   "type": "module",
   "main": "dist/index.cjs",
@@ -22,13 +22,15 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ThatOpen/engine_components/tree/main/packages/components.git"
+    "url": "git+https://github.com/pawelsocha1/engine_components.git",
+    "directory": "packages/components"
   },
   "packageManager": "yarn@3.2.1",
   "scripts": {
     "dev": "vite --host",
     "test": "jest",
     "build": "tsc --p ./tsconfig-build.json && vite build",
+    "prepare": "yarn build",
     "prepublishOnly": "node ./resources/updateComponentsVersion.mjs && yarn build",
     "publish-repo": "npm publish",
     "publish-alpha": "npm publish --tag alpha"

@@ -17,6 +17,8 @@ export class PostproductionRenderer extends RendererWith2D {
    *
    * @returns The initialized Postproduction instance.
    */
+  needsUpdate: boolean = false;
+
   get postproduction() {
     if (!this._postproduction) {
       throw new Error("Renderer not initialized yet with a world!");
