@@ -3524,7 +3524,7 @@ const Qa = class Ka {
     F.BufferGeometry.prototype.computeBoundsTree = zh, F.BufferGeometry.prototype.disposeBoundsTree = kh, F.Mesh.prototype.raycast = Vh;
   }
 };
-R(Qa, "release", "2.4.3");
+R(Qa, "release", "2.4.4");
 let qa = Qa;
 class Cu extends qr {
   constructor() {
@@ -18433,7 +18433,7 @@ class Yn {
       if (s.type === "bounds" && typeof e == "number") {
         const { min: a, minInclusive: l, max: h, maxInclusive: d } = s.parameter;
         let u = !0, f = !0;
-        a !== void 0 && (u = l ? e <= a : e < a), h !== void 0 && (f = d ? e >= h : e > h), o = u && f;
+        a !== void 0 && (u = l ? e >= a : e > a), h !== void 0 && (f = d ? e <= h : e < h), o = u && f;
       }
       return this.cardinality === "prohibited" && (o = !o), this.cardinality === "optional" && (o = !0), r.pass = o, r.pass;
     }), R(this, "testResult", []), this.components = t;
@@ -18927,19 +18927,16 @@ class Dd extends Yn {
         cardinality: this.cardinality
       };
       this.testResult.push(l);
-      const d = (await this.getPsets(e, r)).filter((u) => {
-        var f;
-        return this.evalRequirement(
-          ((f = u.Name) == null ? void 0 : f.value) ?? null,
-          this.propertySet,
-          "PropertySet"
-        ) ? (a.push({
-          currentValue: u.Name.value,
-          parameter: "PropertySet",
-          pass: !0,
-          requiredValue: this.propertySet.parameter
-        }), !0) : !1;
-      });
+      const d = (await this.getPsets(e, r)).filter((u) => this.evalRequirement(
+        u.Name ?? null,
+        this.propertySet,
+        "PropertySet"
+      ) ? (a.push({
+        currentValue: u.Name,
+        parameter: "PropertySet",
+        pass: !0,
+        requiredValue: this.propertySet.parameter
+      }), !0) : !1);
       if (d.length === 0) {
         a.push({
           currentValue: null,
@@ -18950,8 +18947,7 @@ class Dd extends Yn {
         continue;
       }
       for (const u of d) {
-        const f = this.getItemsAttrName(u.type);
-        if (!f) {
+        if (!("Properties" in u)) {
           a.push({
             currentValue: null,
             parameter: "BaseName",
@@ -18960,20 +18956,20 @@ class Dd extends Yn {
           });
           continue;
         }
-        const m = u[f].filter((I) => {
-          var E;
-          return this._unsupportedTypes.includes(I.type) || !this.evalRequirement(
-            ((E = I.Name) == null ? void 0 : E.value) ?? null,
+        const p = u.Properties.filter((m) => {
+          var I;
+          return this._unsupportedTypes.includes(m.type) || !this.evalRequirement(
+            ((I = m.Name) == null ? void 0 : I.value) ?? null,
             this.baseName,
             "BaseName"
           ) ? !1 : (a.push({
-            currentValue: I.Name.value,
+            currentValue: m.Name.value,
             parameter: "BaseName",
             pass: !0,
             requiredValue: this.baseName.parameter
           }), !0);
         });
-        if (m.length === 0) {
+        if (p.length === 0) {
           a.push({
             currentValue: null,
             parameter: "BaseName",
@@ -18982,8 +18978,8 @@ class Dd extends Yn {
           });
           continue;
         }
-        for (const I of m)
-          this.evalValue(I, a), this.evalDataType(I, a), this.evalURI();
+        for (const m of p)
+          this.evalValue(m, a), this.evalDataType(m, a), this.evalURI();
       }
       l.pass = a.every(({ pass: u }) => u);
     }
@@ -18999,15 +18995,20 @@ class Dd extends Yn {
       (e) => e.endsWith("Value") || e.endsWith("Values")
     );
   }
-  async getPsetProps(t, e, s) {
-    const i = structuredClone(e), n = [], r = i[s];
+  async simplifyPset(t, e, s) {
+    var i;
+    const n = [], r = e[s];
     if (!r)
-      return n;
-    for (const { value: o } of r) {
-      const a = await t.getProperties(o);
-      a && n.push(a);
+      return e;
+    for (const { value: a } of r) {
+      const l = await t.getProperties(a);
+      l && n.push(l);
     }
-    return i[s] = n, i;
+    return {
+      Name: (i = e.Name) == null ? void 0 : i.value,
+      Properties: n,
+      type: e.type
+    };
   }
   async getTypePsets(t, e) {
     const s = [], n = this.components.get(et).getEntityRelations(t, e, "IsTypedBy");
@@ -19020,30 +19021,45 @@ class Dd extends Yn {
       const a = await t.getProperties(o);
       if (!(a && "HasProperties" in a && Array.isArray(a.HasProperties)))
         continue;
-      const l = await this.getPsetProps(t, a, "HasProperties");
+      const l = await this.simplifyPset(t, a, "HasProperties");
       s.push(l);
     }
     return s;
   }
   async getPsets(t, e) {
-    const s = await this.getTypePsets(t, e), n = this.components.get(et).getEntityRelations(
+    var s;
+    const i = await this.getTypePsets(t, e), r = this.components.get(et).getEntityRelations(
       t,
       e,
       "IsDefinedBy"
     );
-    if (!n)
-      return s;
-    for (const r of n) {
-      const o = await t.getProperties(r);
-      if (!o)
+    if (!r)
+      return i;
+    const o = [];
+    for (const a of r) {
+      const l = await t.getProperties(a);
+      if (!l)
         continue;
-      const a = this.getItemsAttrName(o.type);
-      if (!a)
+      const h = this.getItemsAttrName(l.type);
+      if (!h)
         continue;
-      const l = await this.getPsetProps(t, o, a);
-      s.push(l);
+      const d = await this.simplifyPset(
+        t,
+        l,
+        h
+      ), u = i.find(
+        ({ Name: f }) => f === d.Name
+      );
+      if (u)
+        for (const f of u.Properties) {
+          const p = (s = f.Name) == null ? void 0 : s.value;
+          d.Properties.find(
+            ({ Name: I }) => I.value === p
+          ) || d.Properties.push(f);
+        }
+      o.push(d);
     }
-    return s;
+    return o;
   }
   // IFCPROPERTYBOUNDEDVALUE are not supported yet
   // IFCPROPERTYTABLEVALUE are not supported yet
