@@ -76,7 +76,6 @@ export class SimpleRenderer extends BaseRenderer {
 
   /** {@link Updateable.update} */
   update() {
-    
     if (!this.enabled || !this.currentWorld) return;
     this.onBeforeUpdate.trigger(this);
     const scene = this.currentWorld.scene.three;
