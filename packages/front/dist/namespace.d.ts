@@ -1,242 +1,382 @@
 declare namespace OBC {
-import * as OBC from "@thatopen/components";
-import { CivilNavigator } from "../CivilNavigator";
-/**
- * This component is responsible for navigating and visualizing elevation data of infra/civil models (vertical alignments). 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/CivilElevationNavigator). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/CivilElevationNavigator).
- */
-export declare class CivilElevationNavigator extends CivilNavigator {
-    /**
-     * A unique identifier for the component.
-     * This UUID is used to register the component within the Components system.
-     */
-    static readonly uuid: "097eea29-2d5a-431a-a247-204d44670621";
-    /** {@link OBC.Component.enabled} */
-    enabled: boolean;
-    readonly view = "vertical";
-    /**
-     * Getter for the world property.
-     * This property is used to retrieve the world context for the component.
-     *
-     * @returns {OBC.World | null} - The current world context for the component.
-     * If null, it means the world has not been set yet.
-     */
-    get world(): OBC.World | null;
-    /**
-     * Sets the world for the CivilElevationNavigator.
-     * This property is used to manage the world context for the component.
-     * When the world is set, it triggers the addition of elevation markers to the scene.
-     *
-     * @param world - The world to set for the component. If null, it will not update the world.
-     */
-    set world(world: OBC.World | null);
-    constructor(components: OBC.Components);
-}
-import * as OBC from "@thatopen/components";
-import { CivilNavigator } from "../CivilNavigator";
-/**
- * This component is responsible for navigating and visualizing plan data of infra/civil models (horizontal alignments). 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/CivilPlanNavigator). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/CivilPlanNavigator).
- */
-export declare class CivilPlanNavigator extends CivilNavigator {
-    /**
-     * A unique identifier for the component.
-     * This UUID is used to register the component within the Components system.
-     */
-    static readonly uuid: "3096dea0-5bc2-41c7-abce-9089b6c9431b";
-    /**
-     * The view mode of the component.
-     * In this case, the view mode is set to "horizontal".
-     */
-    readonly view = "horizontal";
-    private planHighlighter?;
-    /**
-     * Getter for the world property.
-     * Returns the world associated with the CivilPlanNavigator instance.
-     */
-    get world(): OBC.World | null;
-    /**
-     * Setter for the world property.
-     * Sets the world associated with the CivilPlanNavigator instance.
-     * If a new world is provided, the existing PlanHighlighter instance is disposed and a new one is created.
-     * @param world - The new world to be associated with the CivilPlanNavigator instance.
-     */
-    set world(world: OBC.World | null);
-    constructor(components: OBC.Components);
-}
 import * as THREE from "three";
-import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
-import { CurveHighlighter } from "../CivilNavigator/src/curve-highlighter";
-import { CivilMarkerType } from "../CivilNavigator";
-import { Mark } from "../../core";
+import { Mark } from "./src";
 /**
- * This component provides functionality for navigating and interacting with civil engineering data in a 3D environment. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Civil3DNavigator). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Civil3DNavigator).
- *
+ * Interface representing a marker object.
  */
-export declare class Civil3DNavigator extends OBC.Component {
+export interface IMarker {
+    /**
+     * Unique identifier for the marker.
+     */
+    key: string;
+    /**
+     * Label of the marker.
+     */
+    label: Mark;
+    /**
+     * Optional type of the marker.
+     */
+    type?: string;
+    /**
+     * Indicates whether the marker is merged with other markers.
+     */
+    merged: boolean;
+    /**
+     * Indicates whether the marker is static and should not be clustered.
+     */
+    static: boolean;
+}
+/**
+ * Interface representing a group of markers.
+ */
+export interface IGroupedMarkers {
+    /**
+     * Unique identifier for the group of markers.
+     */
+    key: string;
+    /**
+     * Array of keys of markers that belong to this group.
+     */
+    markerKeys: string[];
+    /**
+     * Label of the group of markers.
+     */
+    label: Mark;
+}
+/**
+ * Component for Managing Markers along with creating different types of markers. Every marker is a Simple2DMarker. For every marker that needs to be added, you can use the Manager to add the marker and change its look and feel. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Marker). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Marker).
+ */
+export declare class Marker extends OBC.Component implements OBC.Disposable {
     /**
      * A unique identifier for the component.
      * This UUID is used to register the component within the Components system.
      */
-    static readonly uuid: "0a59c09e-2b49-474a-9320-99f51f40f182";
-    /**
-     * Event triggered when a curve is highlighted.
-     * Provides information about the highlighted curve, point, and index.
-     */
-    readonly onHighlight: OBC.Event<{
-        curve: FRAGS.CurveMesh;
-        point: THREE.Vector3;
-        index: number;
-    }>;
-    /**
-     * Event triggered when a marker (point) on a curve changes.
-     * Provides information about the alignment, percentage, type of marker, and the curve.
-     */
-    readonly onMarkerChange: OBC.Event<{
-        alignment: FRAGS.Alignment;
-        percentage: number;
-        type: CivilMarkerType;
-        curve: FRAGS.CivilCurve;
-    }>;
-    /**
-     * Event triggered when a marker (point) on a curve is hidden.
-     * Provides information about the type of marker.
-     */
-    readonly onMarkerHidden: OBC.Event<{
-        type: CivilMarkerType;
-    }>;
+    static readonly uuid: "4079eb91-79b0-4ede-bcf2-15b837129236";
+    /** {@link OBC.Disposable.onDisposed} */
+    readonly onDisposed: OBC.Event<unknown>;
     /** {@link OBC.Component.enabled} */
     enabled: boolean;
-    mouseMarkers?: {
-        hover: Mark;
-        select: Mark;
-    };
-    private _highlighter?;
-    private _curves;
-    private _world;
     /**
-     * Getter for the world property.
-     * Returns the current world instance.
-     * @returns {OBC.World | null} The current world instance or null if not set.
+     * The distance threshold for clustering markers.
+     * Markers within this distance will be considered for clustering.
+     * Default value is 50.
      */
-    get world(): OBC.World | null;
+    threshold: number;
     /**
-     * Setter for the world property.
-     * Sets the world instance and initializes the component.
-     * @param {OBC.World | null} world - The new world instance or null to clear the current world.
+     * Indicates whether markers should be automatically clustered.
+     * If true, markers will be clustered based on the threshold value.
+     * Default value is true.
      */
-    set world(world: OBC.World | null);
+    autoCluster: boolean;
     /**
-     * Getter for the highlighter property.
-     * Returns the curve highlighter instance.
-     * @returns {CurveHighlighter} The curve highlighter instance.
-     * @throws {Error} If the navigator is not initialized.
+     * A Map containing the markers grouped by world UUID.
+     * Each world can have its own set of markers.
      */
-    get highlighter(): CurveHighlighter;
+    list: Map<string, Map<string, IMarker>>;
+    protected clusterLabels: Set<IGroupedMarkers>;
+    protected currentKeys: Set<string>;
+    protected _color: string;
+    protected _markerKey: number;
+    protected _clusterKey: number;
+    private _worldEvents;
+    private _setupWorlds;
+    /**
+     * Getter for the color property.
+     * Returns the current color of the markers.
+     *
+     * @returns {string} The current color of the markers.
+     */
+    get color(): string;
+    /**
+     * Setter for the color property.
+     * Updates the color of all the markers to the new value.
+     *
+     * @param {string} value - The new color value for the markers.
+     */
+    set color(value: string);
     constructor(components: OBC.Components);
     /**
-     * Draws the civil engineering data onto the 3D scene.
+     * Creates a new marker at the specified point in the world.
      *
-     * @param model - The FragmentsGroup containing the civil data to be drawn.
-     * @throws Will throw an error if the model does not have civil data or if the world is not set.
+     * @param world - The world where the marker will be created.
+     * @param text - The text content of the marker.
+     * @param point - The 3D position where the marker will be placed.
+     * @param isStatic - Indicates whether the marker should be static and not clustered.
+     * @returns The unique key of the created marker.
      */
-    draw(model: FRAGS.FragmentsGroup): void;
+    create(world: OBC.World, text: string, point: THREE.Vector3, isStatic?: boolean): string | undefined;
     /**
-     * Sets a marker at a specific percentage along the given alignment.
+     * Deletes a marker with the specified ID from all worlds.
      *
-     * @param alignment - The alignment on which to place the marker.
-     * @param percentage - The percentage along the alignment where the marker should be placed.
-     * @param type - The type of marker to be set.
-     *
-     * @throws Will throw an error if the mouse markers have not been initialized.
-     *         This can happen if the world has not been set before using this method.
+     * @param id - The unique identifier of the marker to be deleted.
      *
      * @remarks
-     * This method calculates the 3D point at the given percentage along the alignment,
-     * sets the marker at that point, and makes the marker visible.
+     * This method iterates through all the worlds and their respective markers.
+     * If a marker with the specified ID is found, it disposes of the marker's label
+     * and removes the marker from the world's marker list.
      *
-     * @example
-     * '''typescript
-     * const navigator = new Civil3DNavigator(components);
-     * navigator.world = world; // Initialize the world
-     * const alignment = model.civilData.alignments.get(alignmentId);
-     * if (alignment) {
-     *   navigator.setMarker(alignment, 0.5, "select");
-     * }
-     * '''
      */
-    setMarker(alignment: FRAGS.Alignment, percentage: number, type: CivilMarkerType): void;
+    delete(id: string): void;
     /**
-     * Hides the marker of the specified type.
+     * Retrieves the list of markers associated with a specific world.
+     * If the list does not exist for the given world, it creates a new one.
      *
-     * @param type - The type of marker to hide.
-     *
-     * @throws Will throw an error if the mouse markers have not been initialized.
-     *         This can happen if the world has not been set before using this method.
+     * @param world - The world for which the marker list is to be retrieved.
+     * @returns A Map containing the markers associated with the given world.
      *
      * @remarks
-     * This method hides the marker of the specified type by setting its visibility to false.
-     *
-     * @example
-     * '''typescript
-     * const navigator = new Civil3DNavigator(components);
-     * navigator.world = world; // Initialize the world
-     * navigator.hideMarker("select");
-     * '''
+     * This method is used to manage markers per world. It ensures that each world has its own set of markers.
+     * If a marker list for the given world does not exist, it creates a new one and associates it with the world.
      */
-    hideMarker(type: CivilMarkerType): void;
-    private newMouseMarker;
-    private setupEvents;
-    private updateLinesResolution;
-    private onClick;
-    private onMouseMove;
-    private updateMarker;
-}
-import * as THREE from "three";
-import * as FRAGS from "@thatopen/fragments";
-import * as OBC from "@thatopen/components";
-import { EdgesPlane } from "../../core";
-/**
- * This component is used to navigate and visualize cross sections of a 3D model. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/CivilCrossSectionNavigator). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/CivilCrossSectionNavigator).
- */
-export declare class CivilCrossSectionNavigator extends OBC.Component {
+    getWorldMarkerList(world: OBC.World): Map<string, IMarker>;
+    /** {@link OBC.Disposable.dispose} */
+    dispose(type?: string): void;
     /**
-     * A unique identifier for the component. This UUID is used to register the component within the Components system.
+     * Sets up event listeners for clustering markers in the given world.
+     *
+     * @param world - The world where the event listeners will be set up.
+     * @param enabled - Indicates whether the event listeners should be enabled or disabled.
+     *
+     * @remarks
+     * This method checks if the event listeners are already set up for the given world.
+     * If the event listeners are already set up and the 'enabled' parameter is true, the method returns without doing anything.
+     * If the world does not have camera controls, the method returns without doing anything.
+     *
+     * The method then retrieves the event listener for the given world using the 'getWorldEvent' method.
+     * It removes the existing event listeners for the "sleep" and "rest" events from the world's camera controls.
+     *
+     * If the 'enabled' parameter is true, the method adds the event listener for the "sleep" and "rest" events to the world's camera controls.
      */
-    static readonly uuid: "96b2c87e-d90b-4639-8257-8f01136fe324";
+    setupEvents(world: OBC.World, enabled: boolean): void;
+    /**
+     * Performs clustering of markers in the given world.
+     *
+     * @param world - The world where clustering will be performed.
+     *
+     */
+    cluster(world: OBC.World): void;
+    private getWorldEvent;
+    private resetMarkers;
+    private removeMergeMarkers;
+    private getAveragePositionFromLabels;
+    private createClusterElement;
+    private getScreenPosition;
+    private distance;
+    private navigateToCluster;
+}
+import * as OBC from "@thatopen/components";
+import { EdgesStyles } from "./src/edges-styles";
+/**
+ * A component that can add fills and outlines to the Clipper. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/ClipEdges). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/ClipEdges).
+ */
+export declare class ClipEdges extends OBC.Component implements OBC.Disposable {
+    /**
+     * A unique identifier for the component.
+     * This UUID is used to register the component within the Components system.
+     */
+    static readonly uuid: "24dfc306-a3c4-410f-8071-babc4afa5e4d";
+    /** {@link OBC.Disposable.onDisposed} */
+    readonly onDisposed: OBC.Event<unknown>;
     /** {@link OBC.Component.enabled} */
     enabled: boolean;
     /**
-     * A property representing the world in which the component operates.
+     * The styling properties for the edges.
      */
-    world: OBC.World | null;
+    styles: EdgesStyles;
     /**
-     * A property representing the plane used for cross section visualization.
+     * A flag indicating whether the fills need to be updated.
      */
-    plane?: EdgesPlane;
-    private _world3D;
+    fillsNeedUpdate: boolean;
+    private _visible;
     /**
-     * A getter for the 3D world.
-     * @returns The 3D world.
+     * Gets the visibility state of the edges.
+     * @returns {boolean} The current visibility state.
      */
-    get world3D(): OBC.World | null;
+    get visible(): boolean;
     /**
-     * A setter for the 3D world.
-     * @param world - The new 3D world.
+     * Sets the visibility state of the edges.
+     * Updates the visibility of the associated {@link EdgesPlane} instances.
+     * @param {boolean} active - The new visibility state.
      */
-    set world3D(world: OBC.World | null);
+    set visible(active: boolean);
     constructor(components: OBC.Components);
+    /** {@link OBC.Disposable.dispose} */
+    dispose(): void;
     /**
-     * Sets the cross section plane based on the given curve mesh and point.
+     * Updates all the lines of the component.
      *
-     * @param curveMesh - The curve mesh to create the cross section from.
-     * @param point - The point on the curve mesh where the cross section should be created.
+     * @param {boolean} [updateFills=false] - If true, the fills will be updated regardless of the 'fillsNeedUpdate' flag.
+     * @returns {Promise<void>} - A promise that resolves when the update is complete.
      *
-     * @throws Will throw an error if the world or plane is not set before calling this method.
-     * @throws Will throw an error if the geometry is not indexed.
-     *
-     * @returns {Promise<void>}
+     * @remarks
+     * This method iterates through all the {@link EdgesPlane} instances associated with the {@link Clipper} component.
      */
-    set(curveMesh: FRAGS.CurveMesh, point: THREE.Vector3): Promise<void>;
+    update(updateFills?: boolean): Promise<void>;
+}
+import * as THREE from "three";
+import * as OBC from "@thatopen/components";
+/**
+ * Represents a shadow object used in the application.
+ */
+export interface Shadow {
+    /**
+     * The root group of the shadow.
+     */
+    root: THREE.Group;
+    /**
+     * The render target for the shadow texture.
+     */
+    rt: THREE.WebGLRenderTarget;
+    /**
+     * The render target for the blurred shadow texture.
+     */
+    rtBlur: THREE.WebGLRenderTarget;
+    /**
+     * The mesh used for blurring the shadow.
+     */
+    blurPlane: THREE.Mesh;
+    /**
+     * The camera used to render the shadow.
+     */
+    camera: THREE.Camera;
+    /**
+     * The world in which the shadow is rendered.
+     */
+    world: OBC.World;
+}
+/**
+ * Represents a collection of shadows, where each shadow is identified by a unique ID. The keys of the object are the IDs, and the values are the corresponding {@link Shadow} objects.
+ */
+export interface Shadows {
+    [id: string]: Shadow;
+}
+/**
+ * This component drops shadows on meshes in a 3D scene. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/ShadowDropper). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/ShadowDropper).
+ */
+export declare class ShadowDropper extends OBC.Component implements OBC.Disposable {
+    /**
+     * A unique identifier for the component.
+     * This UUID is used to register the component within the Components system.
+     */
+    static readonly uuid: "f833a09a-a3ab-4c58-b03e-da5298c7a1b6";
+    /** {@link OBC.Disposable.onDisposed} */
+    readonly onDisposed: OBC.Event<unknown>;
+    /** {@link OBC.Component.enabled} */
+    enabled: boolean;
+    /**
+     * Controls how far away the shadow is computed
+     */
+    cameraHeight: number;
+    /**
+     * The darkness of the shadow.
+     * A higher value makes the shadow darker.
+     */
+    darkness: number;
+    /**
+     * The opacity of the shadow.
+     * A higher value makes the shadow more opaque.
+     */
+    opacity: number;
+    /**
+     * The resolution of the shadow texture.
+     * A higher value results in a higher-quality shadow.
+     */
+    resolution: number;
+    /**
+     * The amount of blur applied to the shadow.
+     * A higher value makes the shadow more blurred.
+     */
+    amount: number;
+    /**
+     * The color of the shadow plane.
+     * This color is used when the ground color plane is enabled.
+     */
+    planeColor: number;
+    /**
+     * The offset of the shadow from the ground.
+     * A positive value moves the shadow upwards.
+     */
+    shadowOffset: number;
+    /**
+     * The extra scale factor applied to the shadow size.
+     * A higher value makes the shadow larger.
+     */
+    shadowExtraScaleFactor: number;
+    /**
+     * A collection of shadows, where each shadow is identified by a unique ID.
+     */
+    list: Shadows;
+    private tempMaterial;
+    private depthMaterial;
+    constructor(components: OBC.Components);
+    /** {@link OBC.Disposable.dispose} */
+    dispose(): void;
+    /**
+     * Creates a blurred dropped shadow of the given mesh.
+     *
+     * @param model - the mesh whose shadow to generate.
+     * @param id - the name of this shadow.
+     */
+    create(model: THREE.Mesh[], id: string, world: OBC.World): THREE.Group<THREE.Object3DEventMap>;
+    /**
+     * Deletes the specified shadow (if it exists).
+     *
+     * @param id - the name of this shadow.
+     */
+    deleteShadow(id: string): void;
+    private createPlanes;
+    private initializeShadow;
+    private bakeShadow;
+    private static initializeCamera;
+    private static initializeRenderTargets;
+    private initializeRoot;
+    private createBasePlane;
+    private static createBlurPlane;
+    private createPlaneMaterial;
+    private initializeDepthMaterial;
+    private createShadow;
+    private createCamera;
+    private getSizeCenterMin;
+    private blurShadow;
+}
+import * as THREE from "three";
+import * as OBC from "@thatopen/components";
+import { Postproduction } from "./src/postproduction";
+import { RendererWith2D } from "../Marker";
+/**
+ * A class that extends RendererWith2D and adds post-processing capabilities. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/PostproductionRenderer). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/PostproductionRenderer).
+ */
+export declare class PostproductionRenderer extends RendererWith2D {
+    private _postproduction?;
+    /**
+     * Getter for the postproduction instance.
+     * Throws an error if the postproduction instance is not yet initialized.
+     *
+     * @returns The initialized Postproduction instance.
+     */
+    get postproduction(): Postproduction;
+    constructor(components: OBC.Components, container: HTMLElement, parameters?: Partial<THREE.WebGLRendererParameters>);
+    /** {@link Updateable.update} */
+    update(): void;
+    /** {@link OBC.Disposable.dispose}. */
+    dispose(): void;
+    private resizePostproduction;
+    private setPostproductionSize;
+}
+import * as OBC from "@thatopen/components";
+export declare class PlatformComponents extends OBC.Component {
+    /**
+     * A unique identifier for the component.
+     * This UUID is used to register the component within the Components system.
+     */
+    static readonly uuid: "74c0c370-1af8-4ca9-900a-4a4196c0f2f5";
+    enabled: boolean;
+    inputs: string[];
+    private readonly _requestEventID;
+    private readonly _createEventID;
+    constructor(components: OBC.Components);
+    import(componentSource: string): Promise<OBC.ComponentWithUI>;
 }
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
@@ -380,6 +520,245 @@ export declare abstract class CivilNavigator extends OBC.Component implements OB
     private onClick;
     private onControlsUpdated;
     private getScaledBox;
+}
+import * as OBC from "@thatopen/components";
+import { CivilNavigator } from "../CivilNavigator";
+/**
+ * This component is responsible for navigating and visualizing plan data of infra/civil models (horizontal alignments). 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/CivilPlanNavigator). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/CivilPlanNavigator).
+ */
+export declare class CivilPlanNavigator extends CivilNavigator {
+    /**
+     * A unique identifier for the component.
+     * This UUID is used to register the component within the Components system.
+     */
+    static readonly uuid: "3096dea0-5bc2-41c7-abce-9089b6c9431b";
+    /**
+     * The view mode of the component.
+     * In this case, the view mode is set to "horizontal".
+     */
+    readonly view = "horizontal";
+    private planHighlighter?;
+    /**
+     * Getter for the world property.
+     * Returns the world associated with the CivilPlanNavigator instance.
+     */
+    get world(): OBC.World | null;
+    /**
+     * Setter for the world property.
+     * Sets the world associated with the CivilPlanNavigator instance.
+     * If a new world is provided, the existing PlanHighlighter instance is disposed and a new one is created.
+     * @param world - The new world to be associated with the CivilPlanNavigator instance.
+     */
+    set world(world: OBC.World | null);
+    constructor(components: OBC.Components);
+}
+import * as OBC from "@thatopen/components";
+import { CivilNavigator } from "../CivilNavigator";
+/**
+ * This component is responsible for navigating and visualizing elevation data of infra/civil models (vertical alignments). 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/CivilElevationNavigator). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/CivilElevationNavigator).
+ */
+export declare class CivilElevationNavigator extends CivilNavigator {
+    /**
+     * A unique identifier for the component.
+     * This UUID is used to register the component within the Components system.
+     */
+    static readonly uuid: "097eea29-2d5a-431a-a247-204d44670621";
+    /** {@link OBC.Component.enabled} */
+    enabled: boolean;
+    readonly view = "vertical";
+    /**
+     * Getter for the world property.
+     * This property is used to retrieve the world context for the component.
+     *
+     * @returns {OBC.World | null} - The current world context for the component.
+     * If null, it means the world has not been set yet.
+     */
+    get world(): OBC.World | null;
+    /**
+     * Sets the world for the CivilElevationNavigator.
+     * This property is used to manage the world context for the component.
+     * When the world is set, it triggers the addition of elevation markers to the scene.
+     *
+     * @param world - The world to set for the component. If null, it will not update the world.
+     */
+    set world(world: OBC.World | null);
+    constructor(components: OBC.Components);
+}
+import * as THREE from "three";
+import * as FRAGS from "@thatopen/fragments";
+import * as OBC from "@thatopen/components";
+import { EdgesPlane } from "../../core";
+/**
+ * This component is used to navigate and visualize cross sections of a 3D model. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/CivilCrossSectionNavigator). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/CivilCrossSectionNavigator).
+ */
+export declare class CivilCrossSectionNavigator extends OBC.Component {
+    /**
+     * A unique identifier for the component. This UUID is used to register the component within the Components system.
+     */
+    static readonly uuid: "96b2c87e-d90b-4639-8257-8f01136fe324";
+    /** {@link OBC.Component.enabled} */
+    enabled: boolean;
+    /**
+     * A property representing the world in which the component operates.
+     */
+    world: OBC.World | null;
+    /**
+     * A property representing the plane used for cross section visualization.
+     */
+    plane?: EdgesPlane;
+    private _world3D;
+    /**
+     * A getter for the 3D world.
+     * @returns The 3D world.
+     */
+    get world3D(): OBC.World | null;
+    /**
+     * A setter for the 3D world.
+     * @param world - The new 3D world.
+     */
+    set world3D(world: OBC.World | null);
+    constructor(components: OBC.Components);
+    /**
+     * Sets the cross section plane based on the given curve mesh and point.
+     *
+     * @param curveMesh - The curve mesh to create the cross section from.
+     * @param point - The point on the curve mesh where the cross section should be created.
+     *
+     * @throws Will throw an error if the world or plane is not set before calling this method.
+     * @throws Will throw an error if the geometry is not indexed.
+     *
+     * @returns {Promise<void>}
+     */
+    set(curveMesh: FRAGS.CurveMesh, point: THREE.Vector3): Promise<void>;
+}
+import * as THREE from "three";
+import * as FRAGS from "@thatopen/fragments";
+import * as OBC from "@thatopen/components";
+import { CurveHighlighter } from "../CivilNavigator/src/curve-highlighter";
+import { CivilMarkerType } from "../CivilNavigator";
+import { Mark } from "../../core";
+/**
+ * This component provides functionality for navigating and interacting with civil engineering data in a 3D environment. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Civil3DNavigator). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Civil3DNavigator).
+ *
+ */
+export declare class Civil3DNavigator extends OBC.Component {
+    /**
+     * A unique identifier for the component.
+     * This UUID is used to register the component within the Components system.
+     */
+    static readonly uuid: "0a59c09e-2b49-474a-9320-99f51f40f182";
+    /**
+     * Event triggered when a curve is highlighted.
+     * Provides information about the highlighted curve, point, and index.
+     */
+    readonly onHighlight: OBC.Event<{
+        curve: FRAGS.CurveMesh;
+        point: THREE.Vector3;
+        index: number;
+    }>;
+    /**
+     * Event triggered when a marker (point) on a curve changes.
+     * Provides information about the alignment, percentage, type of marker, and the curve.
+     */
+    readonly onMarkerChange: OBC.Event<{
+        alignment: FRAGS.Alignment;
+        percentage: number;
+        type: CivilMarkerType;
+        curve: FRAGS.CivilCurve;
+    }>;
+    /**
+     * Event triggered when a marker (point) on a curve is hidden.
+     * Provides information about the type of marker.
+     */
+    readonly onMarkerHidden: OBC.Event<{
+        type: CivilMarkerType;
+    }>;
+    /** {@link OBC.Component.enabled} */
+    enabled: boolean;
+    mouseMarkers?: {
+        hover: Mark;
+        select: Mark;
+    };
+    private _highlighter?;
+    private _curves;
+    private _world;
+    /**
+     * Getter for the world property.
+     * Returns the current world instance.
+     * @returns {OBC.World | null} The current world instance or null if not set.
+     */
+    get world(): OBC.World | null;
+    /**
+     * Setter for the world property.
+     * Sets the world instance and initializes the component.
+     * @param {OBC.World | null} world - The new world instance or null to clear the current world.
+     */
+    set world(world: OBC.World | null);
+    /**
+     * Getter for the highlighter property.
+     * Returns the curve highlighter instance.
+     * @returns {CurveHighlighter} The curve highlighter instance.
+     * @throws {Error} If the navigator is not initialized.
+     */
+    get highlighter(): CurveHighlighter;
+    constructor(components: OBC.Components);
+    /**
+     * Draws the civil engineering data onto the 3D scene.
+     *
+     * @param model - The FragmentsGroup containing the civil data to be drawn.
+     * @throws Will throw an error if the model does not have civil data or if the world is not set.
+     */
+    draw(model: FRAGS.FragmentsGroup): void;
+    /**
+     * Sets a marker at a specific percentage along the given alignment.
+     *
+     * @param alignment - The alignment on which to place the marker.
+     * @param percentage - The percentage along the alignment where the marker should be placed.
+     * @param type - The type of marker to be set.
+     *
+     * @throws Will throw an error if the mouse markers have not been initialized.
+     *         This can happen if the world has not been set before using this method.
+     *
+     * @remarks
+     * This method calculates the 3D point at the given percentage along the alignment,
+     * sets the marker at that point, and makes the marker visible.
+     *
+     * @example
+     * '''typescript
+     * const navigator = new Civil3DNavigator(components);
+     * navigator.world = world; // Initialize the world
+     * const alignment = model.civilData.alignments.get(alignmentId);
+     * if (alignment) {
+     *   navigator.setMarker(alignment, 0.5, "select");
+     * }
+     * '''
+     */
+    setMarker(alignment: FRAGS.Alignment, percentage: number, type: CivilMarkerType): void;
+    /**
+     * Hides the marker of the specified type.
+     *
+     * @param type - The type of marker to hide.
+     *
+     * @throws Will throw an error if the mouse markers have not been initialized.
+     *         This can happen if the world has not been set before using this method.
+     *
+     * @remarks
+     * This method hides the marker of the specified type by setting its visibility to false.
+     *
+     * @example
+     * '''typescript
+     * const navigator = new Civil3DNavigator(components);
+     * navigator.world = world; // Initialize the world
+     * navigator.hideMarker("select");
+     * '''
+     */
+    hideMarker(type: CivilMarkerType): void;
+    private newMouseMarker;
+    private setupEvents;
+    private updateLinesResolution;
+    private onClick;
+    private onMouseMove;
+    private updateMarker;
 }
 import * as FRAG from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
@@ -713,97 +1092,6 @@ export declare class Highlighter extends OBC.Component implements OBC.Disposable
     private onMouseUp;
     private onMouseMove;
 }
-import * as THREE from "three";
-import * as OBC from "@thatopen/components";
-import { EdgesPlane } from "../../core";
-/** The data that describes a section view. */
-export interface Section {
-    /** The human-readable name of this floor plan (e.g. "First floor"). */
-    name: string;
-    /** The unique identifier for this Section plan (e.g. "0w984V0GL6yR4z75YWgVfX"). */
-    id: string;
-    /** The clipping plane object that cuts the model. */
-    plane: EdgesPlane;
-    /** The offset of the camera to the clipping plane. */
-    offset: number;
-    /** The cached camera data of the view when the user exited it. */
-    cached: {
-        position: THREE.Vector3;
-        target: THREE.Vector3;
-        zoom: number;
-        size: number;
-    };
-}
-/**
- * A component to create and manage arbitrary sections for BIM models.
- */
-export declare class Sections extends OBC.Component implements OBC.Disposable {
-    enabled: boolean;
-    /**
-     * A unique identifier for the component.
-     * This UUID is used to register the component within the Components system.
-     */
-    static readonly uuid: "45b41ba3-7bb8-4e08-909f-e0fa87973965";
-    /** {@link OBC.Disposable.onDisposed} */
-    readonly onDisposed: OBC.Event<unknown>;
-    /** Event that fires after navigating to ta section. */
-    readonly onNavigated: OBC.Event<{
-        id: string;
-    }>;
-    /** Event that fires after exiting the section navigation mode. */
-    readonly onExited: OBC.Event<void>;
-    /** The plane type for the clipping planes created by this component. */
-    readonly planeType = "section";
-    /** The default offset of the camera to the clipping plane. */
-    offset: number;
-    /** All the created sections. */
-    list: Map<string, Section>;
-    /** The current world where the sections are being created. */
-    world?: OBC.World;
-    /** The current section that is being navigated. */
-    current: Section | null;
-    private cached3DCamera;
-    /**
-     * Generates a section with the given data.
-     * @param data - The required data to create a section.
-     * @param data.id - The unique identifier of the section.
-     * @param data.name - The human-readable name of the section.
-     * @param data.point - The 3D point where the section plane lies.
-     * @param data.normal - The unit vector that describes the orientation of the clipping plane.
-     * @param data.type - The type to apply to the created clipping plane.
-     * @param data.offset - The offset of the camera to the section.
-     */
-    create(data: {
-        id: string;
-        name?: string;
-        point: THREE.Vector3;
-        normal: THREE.Vector3;
-        type?: string;
-        offset?: number;
-    }): Section;
-    /**
-     * Deletes the section with the given ID.
-     * @param id - The identifier whose section to delete.
-     */
-    delete(id: string): void;
-    /**
-     * Goes to the section with the given ID.
-     * @param id - The identifier whose section to delete.
-     * @param animate - Whether to animate the transition.
-     */
-    goTo(id: string, animate?: boolean): Promise<void>;
-    /**
-     * Exits the section view mode.
-     * @param animate - Whether to animate the transition.
-     */
-    exit(animate?: boolean): Promise<void>;
-    /** {@link OBC.Disposable.onDisposed} */
-    dispose(): void;
-    private getWorld;
-    private getCamera;
-    private cacheCameraPosition;
-    private hidePreviousClippingPlane;
-}
 import * as OBC from "@thatopen/components";
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
@@ -954,6 +1242,97 @@ export declare class Plans extends OBC.Component implements OBC.Disposable {
 }
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
+import { EdgesPlane } from "../../core";
+/** The data that describes a section view. */
+export interface Section {
+    /** The human-readable name of this floor plan (e.g. "First floor"). */
+    name: string;
+    /** The unique identifier for this Section plan (e.g. "0w984V0GL6yR4z75YWgVfX"). */
+    id: string;
+    /** The clipping plane object that cuts the model. */
+    plane: EdgesPlane;
+    /** The offset of the camera to the clipping plane. */
+    offset: number;
+    /** The cached camera data of the view when the user exited it. */
+    cached: {
+        position: THREE.Vector3;
+        target: THREE.Vector3;
+        zoom: number;
+        size: number;
+    };
+}
+/**
+ * A component to create and manage arbitrary sections for BIM models.
+ */
+export declare class Sections extends OBC.Component implements OBC.Disposable {
+    enabled: boolean;
+    /**
+     * A unique identifier for the component.
+     * This UUID is used to register the component within the Components system.
+     */
+    static readonly uuid: "45b41ba3-7bb8-4e08-909f-e0fa87973965";
+    /** {@link OBC.Disposable.onDisposed} */
+    readonly onDisposed: OBC.Event<unknown>;
+    /** Event that fires after navigating to ta section. */
+    readonly onNavigated: OBC.Event<{
+        id: string;
+    }>;
+    /** Event that fires after exiting the section navigation mode. */
+    readonly onExited: OBC.Event<void>;
+    /** The plane type for the clipping planes created by this component. */
+    readonly planeType = "section";
+    /** The default offset of the camera to the clipping plane. */
+    offset: number;
+    /** All the created sections. */
+    list: Map<string, Section>;
+    /** The current world where the sections are being created. */
+    world?: OBC.World;
+    /** The current section that is being navigated. */
+    current: Section | null;
+    private cached3DCamera;
+    /**
+     * Generates a section with the given data.
+     * @param data - The required data to create a section.
+     * @param data.id - The unique identifier of the section.
+     * @param data.name - The human-readable name of the section.
+     * @param data.point - The 3D point where the section plane lies.
+     * @param data.normal - The unit vector that describes the orientation of the clipping plane.
+     * @param data.type - The type to apply to the created clipping plane.
+     * @param data.offset - The offset of the camera to the section.
+     */
+    create(data: {
+        id: string;
+        name?: string;
+        point: THREE.Vector3;
+        normal: THREE.Vector3;
+        type?: string;
+        offset?: number;
+    }): Section;
+    /**
+     * Deletes the section with the given ID.
+     * @param id - The identifier whose section to delete.
+     */
+    delete(id: string): void;
+    /**
+     * Goes to the section with the given ID.
+     * @param id - The identifier whose section to delete.
+     * @param animate - Whether to animate the transition.
+     */
+    goTo(id: string, animate?: boolean): Promise<void>;
+    /**
+     * Exits the section view mode.
+     * @param animate - Whether to animate the transition.
+     */
+    exit(animate?: boolean): Promise<void>;
+    /** {@link OBC.Disposable.onDisposed} */
+    dispose(): void;
+    private getWorld;
+    private getCamera;
+    private cacheCameraPosition;
+    private hidePreviousClippingPlane;
+}
+import * as THREE from "three";
+import * as OBC from "@thatopen/components";
 import { AreaMeasureElement } from "./src";
 /**
  * This component allows users to measure areas in a 3D scene. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/AreaMeasurement). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/AreaMeasurement).
@@ -1087,6 +1466,108 @@ export declare class AngleMeasurement extends OBC.Component implements OBC.Creat
     private setupEvents;
     private onMouseMove;
     private onKeyDown;
+}
+import * as THREE from "three";
+import * as OBC from "@thatopen/components";
+import { SimpleDimensionLine } from "../SimpleDimensionLine";
+/**
+ * A basic dimension tool to measure distances between 2 points in 3D and display a 3D symbol displaying the numeric value. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/LengthMeasurement). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/LengthMeasurement).
+ */
+export declare class LengthMeasurement extends OBC.Component implements OBC.Createable, OBC.Hideable, OBC.Disposable, OBC.Updateable {
+    /**
+     * A unique identifier for the component.
+     * This UUID is used to register the component within the Components system.
+     */
+    static readonly uuid: "2f9bcacf-18a9-4be6-a293-e898eae64ea1";
+    /** {@link OBC.Disposable.onDisposed} */
+    readonly onDisposed: OBC.Event<unknown>;
+    /** {@link OBC.Updateable.onBeforeUpdate} */
+    readonly onBeforeUpdate: OBC.Event<LengthMeasurement>;
+    /** {@link OBC.Updateable.onAfterUpdate} */
+    readonly onAfterUpdate: OBC.Event<LengthMeasurement>;
+    readonly onCleaned: OBC.Event<null>;
+    /** The minimum distance to force the dimension cursor to a vertex. */
+    snapDistance: number;
+    /**
+     * A list of all the measurement elements created by this component.
+     */
+    list: SimpleDimensionLine[];
+    /**
+     * The world in which the angle measurements are performed.
+     * This property is optional and can be set to null if no world is available.
+     */
+    world?: OBC.World;
+    private _vertexPicker;
+    private _lineMaterial;
+    private _visible;
+    private _enabled;
+    /** Temporary variables for internal operations */
+    private _temp;
+    /** {@link OBC.Component.enabled} */
+    get enabled(): boolean;
+    /** {@link OBC.Component.enabled} */
+    set enabled(value: boolean);
+    /** {@link OBC.Hideable.visible} */
+    get visible(): boolean;
+    /** {@link OBC.Hideable.visible} */
+    set visible(value: boolean);
+    /**
+     * Getter for the color of the dimension lines.
+     * Returns the color of the line material used for the dimension lines.
+     *
+     */
+    get color(): THREE.Color;
+    /**
+     * Setter for the color of the dimension lines.
+     * Sets the color of the line material used for the dimension lines.
+     *
+     */
+    set color(color: THREE.Color);
+    constructor(components: OBC.Components);
+    /** {@link OBC.Disposable.dispose} */
+    dispose(): void;
+    /** {@link OBC.Updateable.update} */
+    update(_delta: number): Promise<void>;
+    /**
+     * Starts or finishes drawing a new dimension line.
+     *
+     * @param data - forces the dimension to be drawn on a plane. Use this if you are drawing
+     * dimensions in floor plan navigation.
+     */
+    create: (data?: any) => void;
+    /**
+     * Creates a new dimension line between two given points.
+     *
+     * @param p1 - The start point of the dimension line.
+     * @param p2 - The end point of the dimension line.
+     *
+     */
+    createOnPoints(p1: THREE.Vector3, p2: THREE.Vector3): SimpleDimensionLine;
+    /** {@link OBC.Createable.delete} */
+    delete(): void;
+    /**
+     * Deletes a specific measurement from the list.
+     *
+     * @param measurement - The measurement to be deleted.
+     *
+     * @remarks
+     * If the measurement does not exist in the list, no action is taken.
+     *
+     */
+    deleteMeasurement(measurement: SimpleDimensionLine): Promise<void>;
+    /** Deletes all the dimensions that have been previously created. */
+    deleteAll(): void;
+    /** {@link OBC.Createable.cancelCreation} */
+    cancelCreation(): void;
+    /** {@link OBC.Createable.endCreation} */
+    endCreation(): void;
+    private drawStart;
+    private drawInProcess;
+    private drawDimension;
+    private getBoundingBoxes;
+    private setupEvents;
+    private onMouseMove;
+    private onKeydown;
 }
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
@@ -1334,108 +1815,6 @@ export declare class FaceMeasurement extends OBC.Component implements OBC.Create
 }
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
-import { SimpleDimensionLine } from "../SimpleDimensionLine";
-/**
- * A basic dimension tool to measure distances between 2 points in 3D and display a 3D symbol displaying the numeric value. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/LengthMeasurement). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/LengthMeasurement).
- */
-export declare class LengthMeasurement extends OBC.Component implements OBC.Createable, OBC.Hideable, OBC.Disposable, OBC.Updateable {
-    /**
-     * A unique identifier for the component.
-     * This UUID is used to register the component within the Components system.
-     */
-    static readonly uuid: "2f9bcacf-18a9-4be6-a293-e898eae64ea1";
-    /** {@link OBC.Disposable.onDisposed} */
-    readonly onDisposed: OBC.Event<unknown>;
-    /** {@link OBC.Updateable.onBeforeUpdate} */
-    readonly onBeforeUpdate: OBC.Event<LengthMeasurement>;
-    /** {@link OBC.Updateable.onAfterUpdate} */
-    readonly onAfterUpdate: OBC.Event<LengthMeasurement>;
-    readonly onCleaned: OBC.Event<null>;
-    /** The minimum distance to force the dimension cursor to a vertex. */
-    snapDistance: number;
-    /**
-     * A list of all the measurement elements created by this component.
-     */
-    list: SimpleDimensionLine[];
-    /**
-     * The world in which the angle measurements are performed.
-     * This property is optional and can be set to null if no world is available.
-     */
-    world?: OBC.World;
-    private _vertexPicker;
-    private _lineMaterial;
-    private _visible;
-    private _enabled;
-    /** Temporary variables for internal operations */
-    private _temp;
-    /** {@link OBC.Component.enabled} */
-    get enabled(): boolean;
-    /** {@link OBC.Component.enabled} */
-    set enabled(value: boolean);
-    /** {@link OBC.Hideable.visible} */
-    get visible(): boolean;
-    /** {@link OBC.Hideable.visible} */
-    set visible(value: boolean);
-    /**
-     * Getter for the color of the dimension lines.
-     * Returns the color of the line material used for the dimension lines.
-     *
-     */
-    get color(): THREE.Color;
-    /**
-     * Setter for the color of the dimension lines.
-     * Sets the color of the line material used for the dimension lines.
-     *
-     */
-    set color(color: THREE.Color);
-    constructor(components: OBC.Components);
-    /** {@link OBC.Disposable.dispose} */
-    dispose(): void;
-    /** {@link OBC.Updateable.update} */
-    update(_delta: number): Promise<void>;
-    /**
-     * Starts or finishes drawing a new dimension line.
-     *
-     * @param data - forces the dimension to be drawn on a plane. Use this if you are drawing
-     * dimensions in floor plan navigation.
-     */
-    create: (data?: any) => void;
-    /**
-     * Creates a new dimension line between two given points.
-     *
-     * @param p1 - The start point of the dimension line.
-     * @param p2 - The end point of the dimension line.
-     *
-     */
-    createOnPoints(p1: THREE.Vector3, p2: THREE.Vector3): SimpleDimensionLine;
-    /** {@link OBC.Createable.delete} */
-    delete(): void;
-    /**
-     * Deletes a specific measurement from the list.
-     *
-     * @param measurement - The measurement to be deleted.
-     *
-     * @remarks
-     * If the measurement does not exist in the list, no action is taken.
-     *
-     */
-    deleteMeasurement(measurement: SimpleDimensionLine): Promise<void>;
-    /** Deletes all the dimensions that have been previously created. */
-    deleteAll(): void;
-    /** {@link OBC.Createable.cancelCreation} */
-    cancelCreation(): void;
-    /** {@link OBC.Createable.endCreation} */
-    endCreation(): void;
-    private drawStart;
-    private drawInProcess;
-    private drawDimension;
-    private getBoundingBoxes;
-    private setupEvents;
-    private onMouseMove;
-    private onKeydown;
-}
-import * as THREE from "three";
-import * as OBC from "@thatopen/components";
 import { Mark } from "../../core";
 /**
  * Interface representing the data required to create a dimension line.
@@ -1626,347 +2005,6 @@ export declare class EdgeMeasurement extends OBC.Component implements OBC.Create
     private onKeydown;
     private updateSelection;
 }
-import * as OBC from "@thatopen/components";
-import { EdgesStyles } from "./src/edges-styles";
-/**
- * A component that can add fills and outlines to the Clipper. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/ClipEdges). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/ClipEdges).
- */
-export declare class ClipEdges extends OBC.Component implements OBC.Disposable {
-    /**
-     * A unique identifier for the component.
-     * This UUID is used to register the component within the Components system.
-     */
-    static readonly uuid: "24dfc306-a3c4-410f-8071-babc4afa5e4d";
-    /** {@link OBC.Disposable.onDisposed} */
-    readonly onDisposed: OBC.Event<unknown>;
-    /** {@link OBC.Component.enabled} */
-    enabled: boolean;
-    /**
-     * The styling properties for the edges.
-     */
-    styles: EdgesStyles;
-    /**
-     * A flag indicating whether the fills need to be updated.
-     */
-    fillsNeedUpdate: boolean;
-    private _visible;
-    /**
-     * Gets the visibility state of the edges.
-     * @returns {boolean} The current visibility state.
-     */
-    get visible(): boolean;
-    /**
-     * Sets the visibility state of the edges.
-     * Updates the visibility of the associated {@link EdgesPlane} instances.
-     * @param {boolean} active - The new visibility state.
-     */
-    set visible(active: boolean);
-    constructor(components: OBC.Components);
-    /** {@link OBC.Disposable.dispose} */
-    dispose(): void;
-    /**
-     * Updates all the lines of the component.
-     *
-     * @param {boolean} [updateFills=false] - If true, the fills will be updated regardless of the 'fillsNeedUpdate' flag.
-     * @returns {Promise<void>} - A promise that resolves when the update is complete.
-     *
-     * @remarks
-     * This method iterates through all the {@link EdgesPlane} instances associated with the {@link Clipper} component.
-     */
-    update(updateFills?: boolean): Promise<void>;
-}
-import * as THREE from "three";
-import * as OBC from "@thatopen/components";
-/**
- * Represents a shadow object used in the application.
- */
-export interface Shadow {
-    /**
-     * The root group of the shadow.
-     */
-    root: THREE.Group;
-    /**
-     * The render target for the shadow texture.
-     */
-    rt: THREE.WebGLRenderTarget;
-    /**
-     * The render target for the blurred shadow texture.
-     */
-    rtBlur: THREE.WebGLRenderTarget;
-    /**
-     * The mesh used for blurring the shadow.
-     */
-    blurPlane: THREE.Mesh;
-    /**
-     * The camera used to render the shadow.
-     */
-    camera: THREE.Camera;
-    /**
-     * The world in which the shadow is rendered.
-     */
-    world: OBC.World;
-}
-/**
- * Represents a collection of shadows, where each shadow is identified by a unique ID. The keys of the object are the IDs, and the values are the corresponding {@link Shadow} objects.
- */
-export interface Shadows {
-    [id: string]: Shadow;
-}
-/**
- * This component drops shadows on meshes in a 3D scene. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/ShadowDropper). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/ShadowDropper).
- */
-export declare class ShadowDropper extends OBC.Component implements OBC.Disposable {
-    /**
-     * A unique identifier for the component.
-     * This UUID is used to register the component within the Components system.
-     */
-    static readonly uuid: "f833a09a-a3ab-4c58-b03e-da5298c7a1b6";
-    /** {@link OBC.Disposable.onDisposed} */
-    readonly onDisposed: OBC.Event<unknown>;
-    /** {@link OBC.Component.enabled} */
-    enabled: boolean;
-    /**
-     * Controls how far away the shadow is computed
-     */
-    cameraHeight: number;
-    /**
-     * The darkness of the shadow.
-     * A higher value makes the shadow darker.
-     */
-    darkness: number;
-    /**
-     * The opacity of the shadow.
-     * A higher value makes the shadow more opaque.
-     */
-    opacity: number;
-    /**
-     * The resolution of the shadow texture.
-     * A higher value results in a higher-quality shadow.
-     */
-    resolution: number;
-    /**
-     * The amount of blur applied to the shadow.
-     * A higher value makes the shadow more blurred.
-     */
-    amount: number;
-    /**
-     * The color of the shadow plane.
-     * This color is used when the ground color plane is enabled.
-     */
-    planeColor: number;
-    /**
-     * The offset of the shadow from the ground.
-     * A positive value moves the shadow upwards.
-     */
-    shadowOffset: number;
-    /**
-     * The extra scale factor applied to the shadow size.
-     * A higher value makes the shadow larger.
-     */
-    shadowExtraScaleFactor: number;
-    /**
-     * A collection of shadows, where each shadow is identified by a unique ID.
-     */
-    list: Shadows;
-    private tempMaterial;
-    private depthMaterial;
-    constructor(components: OBC.Components);
-    /** {@link OBC.Disposable.dispose} */
-    dispose(): void;
-    /**
-     * Creates a blurred dropped shadow of the given mesh.
-     *
-     * @param model - the mesh whose shadow to generate.
-     * @param id - the name of this shadow.
-     */
-    create(model: THREE.Mesh[], id: string, world: OBC.World): THREE.Group<THREE.Object3DEventMap>;
-    /**
-     * Deletes the specified shadow (if it exists).
-     *
-     * @param id - the name of this shadow.
-     */
-    deleteShadow(id: string): void;
-    private createPlanes;
-    private initializeShadow;
-    private bakeShadow;
-    private static initializeCamera;
-    private static initializeRenderTargets;
-    private initializeRoot;
-    private createBasePlane;
-    private static createBlurPlane;
-    private createPlaneMaterial;
-    private initializeDepthMaterial;
-    private createShadow;
-    private createCamera;
-    private getSizeCenterMin;
-    private blurShadow;
-}
-import * as THREE from "three";
-import * as OBC from "@thatopen/components";
-import { Mark } from "./src";
-/**
- * Interface representing a marker object.
- */
-export interface IMarker {
-    /**
-     * Unique identifier for the marker.
-     */
-    key: string;
-    /**
-     * Label of the marker.
-     */
-    label: Mark;
-    /**
-     * Optional type of the marker.
-     */
-    type?: string;
-    /**
-     * Indicates whether the marker is merged with other markers.
-     */
-    merged: boolean;
-    /**
-     * Indicates whether the marker is static and should not be clustered.
-     */
-    static: boolean;
-}
-/**
- * Interface representing a group of markers.
- */
-export interface IGroupedMarkers {
-    /**
-     * Unique identifier for the group of markers.
-     */
-    key: string;
-    /**
-     * Array of keys of markers that belong to this group.
-     */
-    markerKeys: string[];
-    /**
-     * Label of the group of markers.
-     */
-    label: Mark;
-}
-/**
- * Component for Managing Markers along with creating different types of markers. Every marker is a Simple2DMarker. For every marker that needs to be added, you can use the Manager to add the marker and change its look and feel. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Marker). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Marker).
- */
-export declare class Marker extends OBC.Component implements OBC.Disposable {
-    /**
-     * A unique identifier for the component.
-     * This UUID is used to register the component within the Components system.
-     */
-    static readonly uuid: "4079eb91-79b0-4ede-bcf2-15b837129236";
-    /** {@link OBC.Disposable.onDisposed} */
-    readonly onDisposed: OBC.Event<unknown>;
-    /** {@link OBC.Component.enabled} */
-    enabled: boolean;
-    /**
-     * The distance threshold for clustering markers.
-     * Markers within this distance will be considered for clustering.
-     * Default value is 50.
-     */
-    threshold: number;
-    /**
-     * Indicates whether markers should be automatically clustered.
-     * If true, markers will be clustered based on the threshold value.
-     * Default value is true.
-     */
-    autoCluster: boolean;
-    /**
-     * A Map containing the markers grouped by world UUID.
-     * Each world can have its own set of markers.
-     */
-    list: Map<string, Map<string, IMarker>>;
-    protected clusterLabels: Set<IGroupedMarkers>;
-    protected currentKeys: Set<string>;
-    protected _color: string;
-    protected _markerKey: number;
-    protected _clusterKey: number;
-    private _worldEvents;
-    private _setupWorlds;
-    /**
-     * Getter for the color property.
-     * Returns the current color of the markers.
-     *
-     * @returns {string} The current color of the markers.
-     */
-    get color(): string;
-    /**
-     * Setter for the color property.
-     * Updates the color of all the markers to the new value.
-     *
-     * @param {string} value - The new color value for the markers.
-     */
-    set color(value: string);
-    constructor(components: OBC.Components);
-    /**
-     * Creates a new marker at the specified point in the world.
-     *
-     * @param world - The world where the marker will be created.
-     * @param text - The text content of the marker.
-     * @param point - The 3D position where the marker will be placed.
-     * @param isStatic - Indicates whether the marker should be static and not clustered.
-     * @returns The unique key of the created marker.
-     */
-    create(world: OBC.World, text: string, point: THREE.Vector3, isStatic?: boolean): string | undefined;
-    /**
-     * Deletes a marker with the specified ID from all worlds.
-     *
-     * @param id - The unique identifier of the marker to be deleted.
-     *
-     * @remarks
-     * This method iterates through all the worlds and their respective markers.
-     * If a marker with the specified ID is found, it disposes of the marker's label
-     * and removes the marker from the world's marker list.
-     *
-     */
-    delete(id: string): void;
-    /**
-     * Retrieves the list of markers associated with a specific world.
-     * If the list does not exist for the given world, it creates a new one.
-     *
-     * @param world - The world for which the marker list is to be retrieved.
-     * @returns A Map containing the markers associated with the given world.
-     *
-     * @remarks
-     * This method is used to manage markers per world. It ensures that each world has its own set of markers.
-     * If a marker list for the given world does not exist, it creates a new one and associates it with the world.
-     */
-    getWorldMarkerList(world: OBC.World): Map<string, IMarker>;
-    /** {@link OBC.Disposable.dispose} */
-    dispose(type?: string): void;
-    /**
-     * Sets up event listeners for clustering markers in the given world.
-     *
-     * @param world - The world where the event listeners will be set up.
-     * @param enabled - Indicates whether the event listeners should be enabled or disabled.
-     *
-     * @remarks
-     * This method checks if the event listeners are already set up for the given world.
-     * If the event listeners are already set up and the 'enabled' parameter is true, the method returns without doing anything.
-     * If the world does not have camera controls, the method returns without doing anything.
-     *
-     * The method then retrieves the event listener for the given world using the 'getWorldEvent' method.
-     * It removes the existing event listeners for the "sleep" and "rest" events from the world's camera controls.
-     *
-     * If the 'enabled' parameter is true, the method adds the event listener for the "sleep" and "rest" events to the world's camera controls.
-     */
-    setupEvents(world: OBC.World, enabled: boolean): void;
-    /**
-     * Performs clustering of markers in the given world.
-     *
-     * @param world - The world where clustering will be performed.
-     *
-     */
-    cluster(world: OBC.World): void;
-    private getWorldEvent;
-    private resetMarkers;
-    private removeMergeMarkers;
-    private getAveragePositionFromLabels;
-    private createClusterElement;
-    private getScreenPosition;
-    private distance;
-    private navigateToCluster;
-}
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
@@ -1994,151 +2032,6 @@ export declare class PlanHighlighter {
     private showLineInfo;
     private showClothoidInfo;
     private showCircularArcInfo;
-}
-import * as THREE from "three";
-import * as FRAGS from "@thatopen/fragments";
-import * as OBC from "@thatopen/components";
-import { Mark } from "../../core";
-declare const CivilLabelArray: readonly ["Station", "Radius", "Length", "InitialKP", "FinalKP", "KP", "Slope", "Height", "InitialKPV", "FinalKPV"];
-type CivilLabel = (typeof CivilLabelArray)[number];
-/**
- * A component for displaying civil engineering markers in a 3D scene.
- */
-export declare class CivilMarker extends OBC.Component {
-    /**
-     * A unique identifier for the component.
-     * This UUID is used to register the component within the Components system.
-     */
-    static readonly uuid: "0af12c32-81ee-4100-a030-e9ae546f6170";
-    /** {@link OBC.Component.enabled} */
-    enabled: boolean;
-    /**
-     * A reference to the 3D world in which the markers will be displayed.
-     * This property should be set before using any methods of this component.
-     */
-    world: OBC.World | null;
-    protected _markerKey: number;
-    private _list;
-    private type;
-    private divisionLength;
-    constructor(components: OBC.Components);
-    /**
-     * Adds a KP station marker to the world.
-     *
-     * @param world - The world to add the marker to.
-     * @param text - The text to display on the marker.
-     * @param mesh - The line representing the KP station.
-     *
-     * @returns {void}
-     */
-    addKPStation(world: OBC.World, text: string, mesh: THREE.Line): void;
-    /**
-     * Adds a vertical marker to the 3D world based on the given parameters.
-     *
-     * @param world - The 3D world where the marker will be added.
-     * @param text - The text to be displayed on the marker.
-     * @param mesh - The mesh data related to the marker.
-     * @param type - The type of the marker.
-     * @param root - The root object for the marker.
-     *
-     * @returns The created and added marker.
-     */
-    addVerticalMarker(world: OBC.World, text: string, mesh: FRAGS.CurveMesh, type: CivilLabel, root: THREE.Object3D): Mark;
-    /**
-     * Adds a civil engineering marker to the world based on the given type.
-     *
-     * @param world - The world to add the marker to.
-     * @param text - The text to display on the marker.
-     * @param mesh - The mesh related to the marker.
-     * @param type - The type of the marker.
-     *
-     * @returns The created marker.
-     */
-    addCivilMarker(world: OBC.World, text: string, mesh: FRAGS.CurveMesh, type: CivilLabel): Mark;
-    /**
-     * Shows the KP stations on the given mesh.
-     *
-     * @param mesh - The mesh to show the KP stations on.
-     * @throws Will throw an error if a world is not set for this component.
-     * @throws Will throw an error if the type is not set to "horizontal".
-     */
-    showKPStations(mesh: FRAGS.CurveMesh): void;
-    /**
-     * Shows the length of a curve on the world.
-     *
-     * @param points - The points that make up the curve.
-     * @param length - The length of the curve.
-     * @throws Will throw an error if a world is not set for this component.
-     */
-    showCurveLength(points: THREE.Vector3[], length: number): void;
-    /**
-     * Shows the length of a line on the world.
-     *
-     * @param line - The line to show the length on.
-     * @param length - The length of the line.
-     * @throws Will throw an error if a world is not set for this component.
-     */
-    showLineLength(line: THREE.Line, length: number): void;
-    /**
-     * Shows the radius of a curve on the world.
-     *
-     * @param line - The line to show the radius on.
-     * @param radius - The radius of the curve.
-     * @throws Will throw an error if a world is not set for this component.
-     */
-    showCurveRadius(line: THREE.Line, radius: number): void;
-    /**
-     * Deletes civil engineering markers of the specified types from the world.
-     *
-     * @param types - The types of markers to delete. If not provided, all types will be deleted.
-     * @returns {void}
-     */
-    deleteByType(types?: Iterable<CivilLabel>): void;
-    private generateStartAndEndKP;
-    private createNormalLine;
-    private generateConstantKP;
-    private getNormal;
-    private getShortendKPValue;
-    private save;
-}
-export {};
-import * as THREE from "three";
-import * as OBC from "@thatopen/components";
-import { Postproduction } from "./src/postproduction";
-import { RendererWith2D } from "../Marker";
-/**
- * A class that extends RendererWith2D and adds post-processing capabilities. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/PostproductionRenderer). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/PostproductionRenderer).
- */
-export declare class PostproductionRenderer extends RendererWith2D {
-    private _postproduction?;
-    /**
-     * Getter for the postproduction instance.
-     * Throws an error if the postproduction instance is not yet initialized.
-     *
-     * @returns The initialized Postproduction instance.
-     */
-    get postproduction(): Postproduction;
-    constructor(components: OBC.Components, container: HTMLElement, parameters?: Partial<THREE.WebGLRendererParameters>);
-    /** {@link Updateable.update} */
-    update(): void;
-    /** {@link OBC.Disposable.dispose}. */
-    dispose(): void;
-    private resizePostproduction;
-    private setPostproductionSize;
-}
-import * as OBC from "@thatopen/components";
-export declare class PlatformComponents extends OBC.Component {
-    /**
-     * A unique identifier for the component.
-     * This UUID is used to register the component within the Components system.
-     */
-    static readonly uuid: "74c0c370-1af8-4ca9-900a-4a4196c0f2f5";
-    enabled: boolean;
-    inputs: string[];
-    private readonly _requestEventID;
-    private readonly _createEventID;
-    constructor(components: OBC.Components);
-    import(componentSource: string): Promise<OBC.ComponentWithUI>;
 }
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
@@ -2254,110 +2147,6 @@ export declare class EdgesStyles implements OBC.Disposable, OBC.Updateable {
      */
     deleteStyle(id: string, disposeMaterials?: boolean): void;
 }
-import * as THREE from "three";
-import * as OBC from "@thatopen/components";
-import { Mark } from "../../../core";
-interface Area {
-    points: THREE.Vector3[];
-    workingPlane: THREE.Plane | null;
-    area: number;
-}
-export declare class AreaMeasureElement implements OBC.Hideable, OBC.Disposable {
-    enabled: boolean;
-    points: THREE.Vector3[];
-    workingPlane: THREE.Plane | null;
-    labelMarker: Mark;
-    world: OBC.World;
-    components: OBC.Components;
-    readonly onDisposed: OBC.Event<unknown>;
-    readonly onAreaComputed: OBC.Event<number>;
-    readonly onWorkingPlaneComputed: OBC.Event<THREE.Plane>;
-    readonly onPointAdded: OBC.Event<THREE.Vector3>;
-    readonly onPointRemoved: OBC.Event<THREE.Vector3>;
-    private _visible;
-    private _rotationMatrix;
-    private _dimensionLines;
-    private _defaultLineMaterial;
-    /** {@link OBC.Hideable.visible} */
-    get visible(): boolean;
-    /** {@link OBC.Hideable.visible} */
-    set visible(value: boolean);
-    constructor(components: OBC.Components, world: OBC.World, points?: THREE.Vector3[]);
-    setPoint(point: THREE.Vector3, index?: number): void;
-    removePoint(index: number): void;
-    toggleLabel(): void;
-    private addDimensionLine;
-    private getLinesBetweenIndex;
-    computeWorkingPlane(): void;
-    computeArea(): number;
-    dispose(): void;
-    get(): Area;
-}
-export {};
-import * as THREE from "three";
-import * as FRAGS from "@thatopen/fragments";
-import * as OBC from "@thatopen/components";
-import { Line2 } from "three/examples/jsm/lines/Line2.js";
-type CivilHighlightType = "horizontal" | "absolute" | "vertical";
-export declare class CurveHighlighter {
-    protected scene: THREE.Object3D;
-    static settings: {
-        colors: {
-            [curve: string]: number[];
-        };
-    };
-    readonly onSelect: OBC.Event<FRAGS.CurveMesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.Material | THREE.Material[]>>;
-    type: CivilHighlightType;
-    selectCurve: Line2;
-    selectPoints: THREE.Points;
-    hoverCurve: Line2;
-    hoverPoints: THREE.Points;
-    caster: THREE.Raycaster;
-    constructor(scene: THREE.Object3D, type: CivilHighlightType);
-    dispose(): void;
-    castRay(event: MouseEvent, camera: THREE.Camera, dom: HTMLElement, meshes: FRAGS.CurveMesh[]): THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>> | null;
-    select(mesh: FRAGS.CurveMesh): void;
-    unSelect(): void;
-    hover(mesh: FRAGS.CurveMesh): void;
-    unHover(): void;
-    setResolution({ x, y }: THREE.Vector2): void;
-    protected highlight(mesh: FRAGS.CurveMesh, curve: Line2, points: THREE.Points, useColors: boolean): void;
-    private newCurve;
-    private newPoints;
-}
-export {};
-import * as THREE from "three";
-import * as OBC from "@thatopen/components";
-import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
-import { Mark } from "../../../core";
-interface Angle {
-    points: THREE.Vector3[];
-    angle: number;
-}
-export declare class AngleMeasureElement implements OBC.Hideable, OBC.Disposable {
-    enabled: boolean;
-    visible: boolean;
-    points: THREE.Vector3[];
-    world: OBC.World;
-    readonly onDisposed: OBC.Event<unknown>;
-    private _lineMaterial;
-    private _lineGeometry;
-    private _line;
-    private _labelMarker;
-    readonly onAngleComputed: OBC.Event<number>;
-    readonly onPointAdded: OBC.Event<unknown>;
-    set lineMaterial(material: LineMaterial);
-    get lineMaterial(): LineMaterial;
-    set labelMarker(marker: Mark);
-    get labelMarker(): Mark;
-    get angle(): Angle;
-    constructor(world: OBC.World, points?: THREE.Vector3[]);
-    setPoint(point: THREE.Vector3, index?: 0 | 1 | 2): void;
-    toggleLabel(): void;
-    computeAngle(): number;
-    dispose(): void;
-}
-export {};
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -2508,6 +2297,251 @@ export declare class Postproduction {
     private newBasePass;
 }
 import * as THREE from "three";
+import * as FRAGS from "@thatopen/fragments";
+import * as OBC from "@thatopen/components";
+import { Mark } from "../../core";
+declare const CivilLabelArray: readonly ["Station", "Radius", "Length", "InitialKP", "FinalKP", "KP", "Slope", "Height", "InitialKPV", "FinalKPV"];
+type CivilLabel = (typeof CivilLabelArray)[number];
+/**
+ * A component for displaying civil engineering markers in a 3D scene.
+ */
+export declare class CivilMarker extends OBC.Component {
+    /**
+     * A unique identifier for the component.
+     * This UUID is used to register the component within the Components system.
+     */
+    static readonly uuid: "0af12c32-81ee-4100-a030-e9ae546f6170";
+    /** {@link OBC.Component.enabled} */
+    enabled: boolean;
+    /**
+     * A reference to the 3D world in which the markers will be displayed.
+     * This property should be set before using any methods of this component.
+     */
+    world: OBC.World | null;
+    protected _markerKey: number;
+    private _list;
+    private type;
+    private divisionLength;
+    constructor(components: OBC.Components);
+    /**
+     * Adds a KP station marker to the world.
+     *
+     * @param world - The world to add the marker to.
+     * @param text - The text to display on the marker.
+     * @param mesh - The line representing the KP station.
+     *
+     * @returns {void}
+     */
+    addKPStation(world: OBC.World, text: string, mesh: THREE.Line): void;
+    /**
+     * Adds a vertical marker to the 3D world based on the given parameters.
+     *
+     * @param world - The 3D world where the marker will be added.
+     * @param text - The text to be displayed on the marker.
+     * @param mesh - The mesh data related to the marker.
+     * @param type - The type of the marker.
+     * @param root - The root object for the marker.
+     *
+     * @returns The created and added marker.
+     */
+    addVerticalMarker(world: OBC.World, text: string, mesh: FRAGS.CurveMesh, type: CivilLabel, root: THREE.Object3D): Mark;
+    /**
+     * Adds a civil engineering marker to the world based on the given type.
+     *
+     * @param world - The world to add the marker to.
+     * @param text - The text to display on the marker.
+     * @param mesh - The mesh related to the marker.
+     * @param type - The type of the marker.
+     *
+     * @returns The created marker.
+     */
+    addCivilMarker(world: OBC.World, text: string, mesh: FRAGS.CurveMesh, type: CivilLabel): Mark;
+    /**
+     * Shows the KP stations on the given mesh.
+     *
+     * @param mesh - The mesh to show the KP stations on.
+     * @throws Will throw an error if a world is not set for this component.
+     * @throws Will throw an error if the type is not set to "horizontal".
+     */
+    showKPStations(mesh: FRAGS.CurveMesh): void;
+    /**
+     * Shows the length of a curve on the world.
+     *
+     * @param points - The points that make up the curve.
+     * @param length - The length of the curve.
+     * @throws Will throw an error if a world is not set for this component.
+     */
+    showCurveLength(points: THREE.Vector3[], length: number): void;
+    /**
+     * Shows the length of a line on the world.
+     *
+     * @param line - The line to show the length on.
+     * @param length - The length of the line.
+     * @throws Will throw an error if a world is not set for this component.
+     */
+    showLineLength(line: THREE.Line, length: number): void;
+    /**
+     * Shows the radius of a curve on the world.
+     *
+     * @param line - The line to show the radius on.
+     * @param radius - The radius of the curve.
+     * @throws Will throw an error if a world is not set for this component.
+     */
+    showCurveRadius(line: THREE.Line, radius: number): void;
+    /**
+     * Deletes civil engineering markers of the specified types from the world.
+     *
+     * @param types - The types of markers to delete. If not provided, all types will be deleted.
+     * @returns {void}
+     */
+    deleteByType(types?: Iterable<CivilLabel>): void;
+    private generateStartAndEndKP;
+    private createNormalLine;
+    private generateConstantKP;
+    private getNormal;
+    private getShortendKPValue;
+    private save;
+}
+export {};
+import * as THREE from "three";
+import * as FRAGS from "@thatopen/fragments";
+import * as OBC from "@thatopen/components";
+import { Line2 } from "three/examples/jsm/lines/Line2.js";
+type CivilHighlightType = "horizontal" | "absolute" | "vertical";
+export declare class CurveHighlighter {
+    protected scene: THREE.Object3D;
+    static settings: {
+        colors: {
+            [curve: string]: number[];
+        };
+    };
+    readonly onSelect: OBC.Event<FRAGS.CurveMesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.Material | THREE.Material[]>>;
+    type: CivilHighlightType;
+    selectCurve: Line2;
+    selectPoints: THREE.Points;
+    hoverCurve: Line2;
+    hoverPoints: THREE.Points;
+    caster: THREE.Raycaster;
+    constructor(scene: THREE.Object3D, type: CivilHighlightType);
+    dispose(): void;
+    castRay(event: MouseEvent, camera: THREE.Camera, dom: HTMLElement, meshes: FRAGS.CurveMesh[]): THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>> | null;
+    select(mesh: FRAGS.CurveMesh): void;
+    unSelect(): void;
+    hover(mesh: FRAGS.CurveMesh): void;
+    unHover(): void;
+    setResolution({ x, y }: THREE.Vector2): void;
+    protected highlight(mesh: FRAGS.CurveMesh, curve: Line2, points: THREE.Points, useColors: boolean): void;
+    private newCurve;
+    private newPoints;
+}
+export {};
+import * as THREE from "three";
+import * as OBC from "@thatopen/components";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
+import { Mark } from "../../../core";
+interface Angle {
+    points: THREE.Vector3[];
+    angle: number;
+}
+export declare class AngleMeasureElement implements OBC.Hideable, OBC.Disposable {
+    enabled: boolean;
+    visible: boolean;
+    points: THREE.Vector3[];
+    world: OBC.World;
+    readonly onDisposed: OBC.Event<unknown>;
+    private _lineMaterial;
+    private _lineGeometry;
+    private _line;
+    private _labelMarker;
+    readonly onAngleComputed: OBC.Event<number>;
+    readonly onPointAdded: OBC.Event<unknown>;
+    set lineMaterial(material: LineMaterial);
+    get lineMaterial(): LineMaterial;
+    set labelMarker(marker: Mark);
+    get labelMarker(): Mark;
+    get angle(): Angle;
+    constructor(world: OBC.World, points?: THREE.Vector3[]);
+    setPoint(point: THREE.Vector3, index?: 0 | 1 | 2): void;
+    toggleLabel(): void;
+    computeAngle(): number;
+    dispose(): void;
+}
+export {};
+import * as THREE from "three";
+import * as OBC from "@thatopen/components";
+import { Mark } from "../../../core";
+interface Area {
+    points: THREE.Vector3[];
+    workingPlane: THREE.Plane | null;
+    area: number;
+}
+export declare class AreaMeasureElement implements OBC.Hideable, OBC.Disposable {
+    enabled: boolean;
+    points: THREE.Vector3[];
+    workingPlane: THREE.Plane | null;
+    labelMarker: Mark;
+    world: OBC.World;
+    components: OBC.Components;
+    readonly onDisposed: OBC.Event<unknown>;
+    readonly onAreaComputed: OBC.Event<number>;
+    readonly onWorkingPlaneComputed: OBC.Event<THREE.Plane>;
+    readonly onPointAdded: OBC.Event<THREE.Vector3>;
+    readonly onPointRemoved: OBC.Event<THREE.Vector3>;
+    private _visible;
+    private _rotationMatrix;
+    private _dimensionLines;
+    private _defaultLineMaterial;
+    /** {@link OBC.Hideable.visible} */
+    get visible(): boolean;
+    /** {@link OBC.Hideable.visible} */
+    set visible(value: boolean);
+    constructor(components: OBC.Components, world: OBC.World, points?: THREE.Vector3[]);
+    setPoint(point: THREE.Vector3, index?: number): void;
+    removePoint(index: number): void;
+    toggleLabel(): void;
+    private addDimensionLine;
+    private getLinesBetweenIndex;
+    computeWorkingPlane(): void;
+    computeArea(): number;
+    dispose(): void;
+    get(): Area;
+}
+export {};
+import * as THREE from "three";
+import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
+import * as OBC from "@thatopen/components";
+/**
+ * Represents a marker in the 3D world.
+ */
+export declare class Mark implements OBC.Hideable, OBC.Disposable {
+    /**
+     * The CSS object representing the marker.
+     */
+    three: CSS2DObject;
+    /**
+     * The world in which the marker exists.
+     */
+    world: OBC.World;
+    /** {@link OBC.Disposable.onDisposed} */
+    readonly onDisposed: OBC.Event<unknown>;
+    /** {@link OBC.Hideable.visible} */
+    set visible(value: boolean);
+    /** {@link OBC.Hideable.visible} */
+    get visible(): boolean;
+    constructor(world: OBC.World, element?: HTMLElement, parent?: THREE.Object3D);
+    /**
+     * Toggles the visibility of the marker.
+     *
+     * This method changes the 'visible' property of the marker to its opposite value.
+     * If the marker is currently visible, it will be hidden, and vice versa.
+     *
+     * @returns {void}
+     */
+    toggleVisibility(): void;
+    /** {@link OBC.Disposable.dispose} */
+    dispose(): void;
+}
+import * as THREE from "three";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import { Components, SimpleRenderer } from "@thatopen/components";
 /**
@@ -2520,69 +2554,6 @@ export declare class RendererWith2D extends SimpleRenderer {
     three2D: CSS2DRenderer;
     constructor(components: Components, container: HTMLElement, parameters?: Partial<THREE.WebGLRendererParameters>);
     private setupHtmlRenderer;
-}
-import * as THREE from "three";
-import * as OBC from "@thatopen/components";
-import { IndexFragmentMap } from "./types";
-/**
- * Class for managing and rendering the fills of a clipping plane.
- */
-export declare class ClippingFills {
-    /**
-     * The THREE.js mesh representing the fills.
-     */
-    mesh: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.Material | THREE.Material[], THREE.Object3DEventMap>;
-    /**
-     * The components instance associated with the clipping fills.
-     */
-    components: OBC.Components;
-    /**
-     * The world in which the clipping plane and fills exist.
-     */
-    world: OBC.World;
-    /**
-     * The name of the style associated with this clipping fills.
-     */
-    styleName?: string;
-    private _precission;
-    private _tempVector;
-    private _plane;
-    private _geometry;
-    private _outlinedMesh;
-    private _plane2DCoordinateSystem;
-    private _planeAxis?;
-    /**
-     * Gets the visibility of the clipping fills mesh.
-     * @returns {boolean} Returns true if the mesh is visible, false otherwise.
-     */
-    get visible(): boolean;
-    /**
-     * Sets the visibility of the clipping fills mesh.
-     * @param {boolean} value - The new visibility state. If true, the mesh will be added to the scene and the style's meshes set. If false, the mesh will be removed from the scene and the style's meshes set.
-     */
-    set visible(value: boolean);
-    /**
-     * Sets the geometry of the clipping fills mesh.
-     * @param {THREE.BufferGeometry} geometry - The new geometry for the mesh. The position attribute of the geometry will be assigned to the mesh's geometry.
-     */
-    set geometry(geometry: THREE.BufferGeometry);
-    constructor(components: OBC.Components, world: OBC.World, plane: THREE.Plane, geometry: THREE.BufferGeometry, material: THREE.Material);
-    /**
-     * Disposes of the clipping fills mesh and its associated resources.
-     * This method should be called when the clipping fills are no longer needed to free up memory.
-     */
-    dispose(): void;
-    /**
-     * Updates the clipping fills mesh with new indices.
-     *
-     * @param trianglesIndices - An array of indices representing triangles in the geometry.
-     * @param indexFragMap - A map that allows to trace back the original fragment and id from each triangle of the fill mesh.
-     *
-     */
-    update(trianglesIndices: number[], indexFragMap: IndexFragmentMap): void;
-    private computeFill;
-    private updatePlane2DCoordinateSystem;
-    private getStyleAndScene;
 }
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
@@ -2646,6 +2617,26 @@ export declare class ClippingEdges implements OBC.Hideable, OBC.Disposable, OBC.
 }
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
+/**
+ * A class to manage and highlight edges fill meshes based on selected fragments. Useful for highlighting sectioned elements in floorplan and section views.
+ */
+export declare class FillHighlighter {
+    private _meshes;
+    /**
+     * Highlights edges fill meshes based on selected fragments.
+     */
+    highlight(name: string, mesh: THREE.Mesh, color: THREE.Color, selection: FRAGS.FragmentIdMap): void;
+    /**
+     * Clears the highlighted meshes for a specific style or all styles.
+     *
+     * @param name - The name of the style to clear. If not provided, clears all styles.
+     *
+     */
+    clear(name?: string): void;
+    dispose(): void;
+}
+import * as THREE from "three";
+import * as FRAGS from "@thatopen/fragments";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
 import { ClippingFills } from "./clipping-fills";
 /**
@@ -2700,38 +2691,128 @@ export interface BvhLineSegmentsGeometry extends LineSegmentsGeometry {
  */
 export type IndexFragmentMap = Map<number, FRAGS.FragmentIdMap>;
 import * as THREE from "three";
-import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import * as OBC from "@thatopen/components";
+import { IndexFragmentMap } from "./types";
 /**
- * Represents a marker in the 3D world.
+ * Class for managing and rendering the fills of a clipping plane.
  */
-export declare class Mark implements OBC.Hideable, OBC.Disposable {
+export declare class ClippingFills {
     /**
-     * The CSS object representing the marker.
+     * The THREE.js mesh representing the fills.
      */
-    three: CSS2DObject;
+    mesh: THREE.Mesh<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.Material | THREE.Material[], THREE.Object3DEventMap>;
     /**
-     * The world in which the marker exists.
+     * The components instance associated with the clipping fills.
+     */
+    components: OBC.Components;
+    /**
+     * The world in which the clipping plane and fills exist.
      */
     world: OBC.World;
-    /** {@link OBC.Disposable.onDisposed} */
-    readonly onDisposed: OBC.Event<unknown>;
-    /** {@link OBC.Hideable.visible} */
-    set visible(value: boolean);
-    /** {@link OBC.Hideable.visible} */
-    get visible(): boolean;
-    constructor(world: OBC.World, element?: HTMLElement, parent?: THREE.Object3D);
     /**
-     * Toggles the visibility of the marker.
-     *
-     * This method changes the 'visible' property of the marker to its opposite value.
-     * If the marker is currently visible, it will be hidden, and vice versa.
-     *
-     * @returns {void}
+     * The name of the style associated with this clipping fills.
      */
-    toggleVisibility(): void;
-    /** {@link OBC.Disposable.dispose} */
+    styleName?: string;
+    private _precission;
+    private _tempVector;
+    private _plane;
+    private _geometry;
+    private _outlinedMesh;
+    private _plane2DCoordinateSystem;
+    private _planeAxis?;
+    /**
+     * Gets the visibility of the clipping fills mesh.
+     * @returns {boolean} Returns true if the mesh is visible, false otherwise.
+     */
+    get visible(): boolean;
+    /**
+     * Sets the visibility of the clipping fills mesh.
+     * @param {boolean} value - The new visibility state. If true, the mesh will be added to the scene and the style's meshes set. If false, the mesh will be removed from the scene and the style's meshes set.
+     */
+    set visible(value: boolean);
+    /**
+     * Sets the geometry of the clipping fills mesh.
+     * @param {THREE.BufferGeometry} geometry - The new geometry for the mesh. The position attribute of the geometry will be assigned to the mesh's geometry.
+     */
+    set geometry(geometry: THREE.BufferGeometry);
+    constructor(components: OBC.Components, world: OBC.World, plane: THREE.Plane, geometry: THREE.BufferGeometry, material: THREE.Material);
+    /**
+     * Disposes of the clipping fills mesh and its associated resources.
+     * This method should be called when the clipping fills are no longer needed to free up memory.
+     */
     dispose(): void;
+    /**
+     * Updates the clipping fills mesh with new indices.
+     *
+     * @param trianglesIndices - An array of indices representing triangles in the geometry.
+     * @param indexFragMap - A map that allows to trace back the original fragment and id from each triangle of the fill mesh.
+     *
+     */
+    update(trianglesIndices: number[], indexFragMap: IndexFragmentMap): void;
+    private computeFill;
+    private updatePlane2DCoordinateSystem;
+    private getStyleAndScene;
+}
+export declare function newDimensionMark(): HTMLDivElement;
+import * as OBC from "@thatopen/components";
+/**
+ * Represents an instance of a streamed object.
+ */
+export interface StreamedInstance {
+    /**
+     * Unique identifier of the instance.
+     */
+    id: number;
+    /**
+     * Color of the instance.
+     */
+    color: number[];
+    /**
+     * Transformation matrix of the instance.
+     */
+    transformation: number[];
+}
+/**
+ * A map of streamed instances, grouped by their unique identifier.
+ */
+export type StreamedInstances = Map<number, StreamedInstance[]>;
+/**
+ * Settings for the stream loader.
+ */
+export interface StreamLoaderSettings {
+    /**
+     * Array of streamed assets.
+     */
+    assets: OBC.StreamedAsset[];
+    /**
+     * Streamed geometries.
+     */
+    geometries: OBC.StreamedGeometries;
+    /**
+     * Identifier of the global data file.
+     */
+    globalDataFileId: string;
+}
+/**
+ * Settings for the stream properties.
+ */
+export interface StreamPropertiesSettings {
+    /**
+     * Map of identifiers to numbers.
+     */
+    ids: {
+        [id: number]: number;
+    };
+    /**
+     * Map of types to arrays of numbers.
+     */
+    types: {
+        [type: number]: number[];
+    };
+    /**
+     * Identifier of the indexes file.
+     */
+    indexesFile: string;
 }
 import * as FRAGS from "@thatopen/fragments";
 import * as THREE from "three";
@@ -2797,87 +2878,6 @@ export declare class GeometryCullerRenderer extends OBC.CullerRenderer {
     private handleLostGeometries;
     private createModelIndex;
 }
-import * as OBC from "@thatopen/components";
-/**
- * Represents an instance of a streamed object.
- */
-export interface StreamedInstance {
-    /**
-     * Unique identifier of the instance.
-     */
-    id: number;
-    /**
-     * Color of the instance.
-     */
-    color: number[];
-    /**
-     * Transformation matrix of the instance.
-     */
-    transformation: number[];
-}
-/**
- * A map of streamed instances, grouped by their unique identifier.
- */
-export type StreamedInstances = Map<number, StreamedInstance[]>;
-/**
- * Settings for the stream loader.
- */
-export interface StreamLoaderSettings {
-    /**
-     * Array of streamed assets.
-     */
-    assets: OBC.StreamedAsset[];
-    /**
-     * Streamed geometries.
-     */
-    geometries: OBC.StreamedGeometries;
-    /**
-     * Identifier of the global data file.
-     */
-    globalDataFileId: string;
-}
-/**
- * Settings for the stream properties.
- */
-export interface StreamPropertiesSettings {
-    /**
-     * Map of identifiers to numbers.
-     */
-    ids: {
-        [id: number]: number;
-    };
-    /**
-     * Map of types to arrays of numbers.
-     */
-    types: {
-        [type: number]: number[];
-    };
-    /**
-     * Identifier of the indexes file.
-     */
-    indexesFile: string;
-}
-export declare function newDimensionMark(): HTMLDivElement;
-import * as THREE from "three";
-import * as FRAGS from "@thatopen/fragments";
-/**
- * A class to manage and highlight edges fill meshes based on selected fragments. Useful for highlighting sectioned elements in floorplan and section views.
- */
-export declare class FillHighlighter {
-    private _meshes;
-    /**
-     * Highlights edges fill meshes based on selected fragments.
-     */
-    highlight(name: string, mesh: THREE.Mesh, color: THREE.Color, selection: FRAGS.FragmentIdMap): void;
-    /**
-     * Clears the highlighted meshes for a specific style or all styles.
-     *
-     * @param name - The name of the style to clear. If not provided, clears all styles.
-     *
-     */
-    clear(name?: string): void;
-    dispose(): void;
-}
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
@@ -2936,9 +2936,9 @@ export declare class CustomEffectsPass extends Pass {
 }
 import * as THREE from "three";
 export declare function getPlaneDistanceMaterial(): THREE.ShaderMaterial;
-declare module "n8ao";
 import * as THREE from "three";
 export declare function getProjectedNormalMaterial(): THREE.ShaderMaterial;
+declare module "n8ao";
 export {};
 
 }
