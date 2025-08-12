@@ -733,27 +733,27 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
-    "@thatopen/components": ~3.1.0
-    "@thatopen/fragments": ~3.1.0
-    "@thatopen/ui": ~3.1.0
-    "@thatopen/ui-obc": ^3.1.0
+    "@thatopen/components": 3.1.1
+    "@thatopen/fragments": 3.1.5
+    "@thatopen/ui": 3.1.1
+    "@thatopen/ui-obc": 3.1.2
     "@types/convert-units": 2.3.11
     "@types/earcut": ^2.1.4
     "@types/three": ^0.175.0
     three: ^0.175.0
-    web-ifc: 0.0.69
+    web-ifc: 0.0.70
   peerDependencies:
-    "@thatopen/fragments": ~3.1.0
+    "@thatopen/fragments": 3.1.5
     three: ">=0.175.0"
-    web-ifc: 0.0.69
+    web-ifc: 0.0.70
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@workspace:packages/core, @thatopen/components@~3.1.0":
+"@thatopen/components@3.1.1, @thatopen/components@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
-    "@thatopen/fragments": ~3.1.0
+    "@thatopen/fragments": 3.1.5
     "@thatopen/ui": ~3.1.0
     "@types/convert-units": 2.3.11
     "@types/three": 0.175.0
@@ -763,17 +763,17 @@ __metadata:
     stats.js: ^0.17.0
     three: ^0.175.0
     three-mesh-bvh: 0.7.0
-    web-ifc: 0.0.69
+    web-ifc: 0.0.70
   peerDependencies:
-    "@thatopen/fragments": ~3.1.0
+    "@thatopen/fragments": 3.1.5
     three: ">=0.175.0"
-    web-ifc: 0.0.69
+    web-ifc: 0.0.70
   languageName: unknown
   linkType: soft
 
-"@thatopen/fragments@npm:~3.1.0":
-  version: 3.1.0
-  resolution: "@thatopen/fragments@npm:3.1.0"
+"@thatopen/fragments@npm:3.1.5":
+  version: 3.1.5
+  resolution: "@thatopen/fragments@npm:3.1.5"
   dependencies:
     earcut: ^3.0.1
     flatbuffers: 25.2.10
@@ -781,24 +781,35 @@ __metadata:
     pako: 2.1.0
   peerDependencies:
     three: ">=0.175"
-    web-ifc: 0.0.69
-  checksum: 4feff6296ccc17c722e71786ac5ac769317ed02783634de1890334ced1e6ec4bc02165651c8fb3fea7868ccfebc909cebec49ea89923f77213ffe03efb126e2c
+    web-ifc: 0.0.70
+  checksum: 2fa23accc95ba72486440dfd19de56179b388a1f55d23bae5c2a6e0ad5659769fb1e539cb72852a864ab8b0743ed0a583b4337ea0b406b8144c78f44321f494e
   languageName: node
   linkType: hard
 
-"@thatopen/ui-obc@npm:^3.1.0":
-  version: 3.1.0
-  resolution: "@thatopen/ui-obc@npm:3.1.0"
+"@thatopen/ui-obc@npm:3.1.2":
+  version: 3.1.2
+  resolution: "@thatopen/ui-obc@npm:3.1.2"
   dependencies:
     "@thatopen/ui": ~3.1.0
     lit: 3.1.2
   peerDependencies:
-    "@thatopen-platform/components-beta": ~3.0.0
-    "@thatopen-platform/components-front-beta": ~3.0.0
-    "@thatopen-platform/fragments-beta": ~3.0.0
+    "@thatopen/components": ~3.1.0
+    "@thatopen/components-front": ~3.1.0
+    "@thatopen/fragments": ~3.1.0
     three: ">=0.175.0"
-    web-ifc: 0.0.69
-  checksum: 4198150789fd8b2d6adb50f79bddb53055fc04de992eed97829b69221a1639a45f08b051885d57045dd6e8b06c4f8979d6dce18cfb9fae275f9080bbb4949a5a
+    web-ifc: 0.0.70
+  checksum: 9e43c3fea6bf8b2b065bb75899b571fb1983cc4f77a07b582e01df9ec7c1c0db9b6dbc7ce950b1b9f95998e6e85621dcfb9148a9a89e1ee3cec0ad198559dd18
+  languageName: node
+  linkType: hard
+
+"@thatopen/ui@npm:3.1.1":
+  version: 3.1.1
+  resolution: "@thatopen/ui@npm:3.1.1"
+  dependencies:
+    "@floating-ui/dom": 1.6.3
+    iconify-icon: 2.0.0
+    lit: 3.1.2
+  checksum: 9d5673a309ccb4efee0b2b2b16c9effa959d96c27ebc0fbd28ff9df9d188a18571449ca746c1b1e0971364e5b0005b56763cd8303e8970680915152df8429d97
   languageName: node
   linkType: hard
 
@@ -4833,10 +4844,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"web-ifc@npm:0.0.69":
-  version: 0.0.69
-  resolution: "web-ifc@npm:0.0.69"
-  checksum: be0f6f2a7cdeb21844082a811af553ca5c61818169f641b5e1cd0ad98ac6bba198a4465fc0d03390b046b25225edf64118f51b61696fa92af84d0989a10df5b7
+"web-ifc@npm:0.0.70":
+  version: 0.0.70
+  resolution: "web-ifc@npm:0.0.70"
+  checksum: 23c453f1bbb2fb5b5411ceb0cef7261bbd4af7c2ddcdd256a158ff7f354afc864e834ab7d48463ae4e628b779da80e2eadd1bfb48fd700091831ed6a10b57547
   languageName: node
   linkType: hard
 

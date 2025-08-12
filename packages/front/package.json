@@ -32,14 +32,14 @@
     "publish-repo": "npm publish"
   },
   "peerDependencies": {
-    "@thatopen/fragments": "~3.1.0",
+    "@thatopen/fragments": "3.1.6",
     "three": ">=0.175.0",
     "web-ifc": "0.0.70"
   },
   "devDependencies": {
-    "@thatopen/fragments": "~3.1.0",
-    "@thatopen/ui": "~3.1.0",
-    "@thatopen/ui-obc": "^3.1.0",
+    "@thatopen/fragments": "3.1.6",
+    "@thatopen/ui": "3.1.1",
+    "@thatopen/ui-obc": "3.1.2",
     "@types/convert-units": "2.3.11",
     "@types/earcut": "^2.1.4",
     "@types/three": "^0.175.0",
@@ -47,6 +47,6 @@
     "web-ifc": "0.0.70"
   },
   "dependencies": {
-    "@thatopen/components": "~3.1.0"
+    "@thatopen/components": "3.1.1"
   }
 }
