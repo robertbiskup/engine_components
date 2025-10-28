@@ -747,27 +747,27 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
-    "@thatopen/components": 3.1.4
-    "@thatopen/fragments": 3.1.7
-    "@thatopen/ui": 3.1.1
-    "@thatopen/ui-obc": 3.1.3
+    "@thatopen/components": ~3.2.0
+    "@thatopen/fragments": ~3.2.0
+    "@thatopen/ui": ~3.2.0
+    "@thatopen/ui-obc": ^3.1.0
     "@types/convert-units": 2.3.11
     "@types/earcut": ^2.1.4
     "@types/three": ^0.175.0
     three: ^0.175.0
     web-ifc: 0.0.72
   peerDependencies:
-    "@thatopen/fragments": 3.1.7
+    "@thatopen/fragments": ~3.1.0
     three: ">=0.175.0"
     web-ifc: ">=0.0.72"
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@3.1.4, @thatopen/components@workspace:packages/core":
+"@thatopen/components@workspace:packages/core, @thatopen/components@~3.1.0":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
-    "@thatopen/fragments": 3.1.7
+    "@thatopen/fragments": ~3.1.0
     "@thatopen/ui": ~3.1.0
     "@types/convert-units": 2.3.11
     "@types/three": 0.175.0
@@ -779,15 +779,15 @@ __metadata:
     three-mesh-bvh: 0.7.0
     web-ifc: 0.0.72
   peerDependencies:
-    "@thatopen/fragments": 3.1.7
+    "@thatopen/fragments": ~3.1.0
     three: ">=0.175.0"
     web-ifc: ">=0.0.72"
   languageName: unknown
   linkType: soft
 
-"@thatopen/fragments@npm:3.1.7":
-  version: 3.1.7
-  resolution: "@thatopen/fragments@npm:3.1.7"
+"@thatopen/fragments@npm:~3.1.0":
+  version: 3.1.0
+  resolution: "@thatopen/fragments@npm:3.1.0"
   dependencies:
     earcut: ^3.0.1
     flatbuffers: 25.2.10
@@ -795,8 +795,8 @@ __metadata:
     pako: 2.1.0
   peerDependencies:
     three: ">=0.175"
-    web-ifc: ">=0.0.71"
-  checksum: 77e0f4a799bce38f4e9eef6cad4420e3564697078e72e313b935e4a04c4f25cf95da7ee1d489b1d14971a96c64496ad7e9a2536802e614055fc2047e4b72b4ed
+    web-ifc: 0.0.69
+  checksum: 4feff6296ccc17c722e71786ac5ac769317ed02783634de1890334ced1e6ec4bc02165651c8fb3fea7868ccfebc909cebec49ea89923f77213ffe03efb126e2c
   languageName: node
   linkType: hard
 
@@ -835,6 +835,17 @@ __metadata:
     iconify-icon: 2.0.0
     lit: 3.1.2
   checksum: e85f5b9d70aafcb54c05344eb1dfaa949ac4655964f63b0edb87c9f3eb85c72f9c77eccc3c0ceef2e9a860851a7b21912db0ff80d54f3220d9088f128575d282
+  languageName: node
+  linkType: hard
+
+"@thatopen/ui@npm:~3.2.0":
+  version: 3.2.0
+  resolution: "@thatopen/ui@npm:3.2.0"
+  dependencies:
+    "@floating-ui/dom": 1.6.3
+    iconify-icon: 2.0.0
+    lit: 3.1.2
+  checksum: d6d96b0fde21f3aad98f7eeb4093c2f06c5680f7ef616b8c2f24bd23d17d1e0729eadc9125e6b630da2a5d1b71765093e315da9652a7340285000f243c421430
   languageName: node
   linkType: hard
 
