@@ -31,6 +31,7 @@ export class SimpleRenderer extends BaseRenderer {
   protected _canvas: HTMLCanvasElement;
   protected _parameters?: Partial<THREE.WebGLRendererParameters>;
   protected _resizeObserver: ResizeObserver | null = null;
+  public needsUpdate = true;
 
   protected onContainerUpdated = new Event();
 
@@ -52,6 +53,7 @@ export class SimpleRenderer extends BaseRenderer {
 
     this.container = container;
     this._parameters = parameters;
+    this.needsUpdate = true;
 
     this.three = new THREE.WebGLRenderer({
       antialias: true,
@@ -74,6 +76,7 @@ export class SimpleRenderer extends BaseRenderer {
 
   /** {@link Updateable.update} */
   update() {
+    if (!this.needsUpdate) return;
     if (!this.enabled || !this.currentWorld) return;
     this.onBeforeUpdate.trigger(this);
     const scene = this.currentWorld.scene.three;
