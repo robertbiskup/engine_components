@@ -63,6 +63,9 @@ export class Postproduction {
     }
   }
 
+  get needsUpdate() {
+    return this._needsUpdate;
+  }
   set needsUpdate(value: boolean) {
     this._needsUpdate = value;
   }
