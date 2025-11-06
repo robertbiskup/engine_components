@@ -39,6 +39,7 @@ export class Postproduction {
   private _components: OBC.Components;
   private _renderer: PostproductionRenderer;
   private _needsUpdate = true;
+  private _needsContinuedUpdate = false;
 
   get basePass() {
     if (!this._basePass) {
@@ -68,6 +69,12 @@ export class Postproduction {
   }
   set needsUpdate(value: boolean) {
     this._needsUpdate = value;
+  }
+  get needsContinuedUpdate() {
+    return this._needsContinuedUpdate;
+  }
+  set needsContinuedUpdate(value: boolean) {
+    this._needsContinuedUpdate = value;
   }
 
   get aoPass() {
@@ -221,7 +228,7 @@ export class Postproduction {
   }
 
   update() {
-    if (!this._needsUpdate) return;
+    if (!this._needsContinuedUpdate && !this._needsUpdate) return;
     if (!this._composer) return;
     for (const material of this.invisibleMaterials) {
       material.userData.wasVisibleForPostproduction = material.visible;
@@ -231,7 +238,9 @@ export class Postproduction {
     for (const material of this.invisibleMaterials) {
       material.visible = material.userData.wasVisibleForPostproduction;
     }
-    this._needsUpdate = false;
+    if (!this._needsContinuedUpdate) {
+      this._needsUpdate = false;
+    }
   }
 
   dispose() {
