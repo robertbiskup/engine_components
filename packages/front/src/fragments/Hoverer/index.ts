@@ -129,7 +129,7 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
     this._meshes.clear();
   };
 
-  private animate = () => {
+  private animate = async () => {
     if (!(this._fadeAnimation && this.animation && this.material.transparent))
       return;
     const { startTime, duration, fadeIn } = this._fadeAnimation;
@@ -147,6 +147,7 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
       if (!fadeIn) this._meshes.clear();
       this._fadeAnimation = null;
     }
+    await this.world?.renderer?.update();
   };
 
   async hover() {

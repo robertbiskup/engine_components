@@ -38,9 +38,9 @@
     "web-ifc": ">=0.0.72"
   },
   "devDependencies": {
-    "@thatopen/fragments": "~3.2.0",
-    "@thatopen/ui": "~3.2.0",
-    "@thatopen/ui-obc": "~3.2.0",
+    "@thatopen/fragments": "3.2.3",
+    "@thatopen/ui": "3.2.0",
+    "@thatopen/ui-obc": "3.2.2",
     "@types/convert-units": "2.3.11",
     "@types/earcut": "^2.1.4",
     "@types/three": "^0.175.0",
