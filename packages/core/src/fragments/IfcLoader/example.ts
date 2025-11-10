@@ -61,13 +61,24 @@ components.get(OBC.Grids).create(world);
 const ifcLoader = components.get(OBC.IfcLoader);
 
 /* MD
+  :::warning What elements of IFC get converted to Fragments?
+
+  For memory efficiency reasons, we don't convert each an every element to fragments by default. You can see the list in IfcImporter.classes and check out the full list [here](https://github.com/ThatOpen/engine_fragment/blob/main/packages/fragments/src/Importers/IfcImporter/src/classes.ts). If you convert an IFC to fragments and miss some elements, you probably need to add their IFC classes to the list. You can access the importer instance in the onIfcImporterInitialized event.
+  :::
+*/
+
+ifcLoader.onIfcImporterInitialized.add((importer) => {
+  console.log(importer.classes);
+});
+
+/* MD
   With the loader in place, it needs to be properly configured. This involves setting up web-ifc (the core library responsible for reading IFC files) to ensure it is ready to convert IFC files into Fragments:
 */
 
 await ifcLoader.setup({
   autoSetWasm: false,
   wasm: {
-    path: "https://unpkg.com/web-ifc@0.0.70/",
+    path: "https://unpkg.com/web-ifc@0.0.72/",
     absolute: true,
   },
 });
@@ -77,7 +88,7 @@ await ifcLoader.setup({
 */
 
 const workerUrl =
-  "/node_modules/fragments-beta/dist/Worker/worker.mjs";
+  "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 
@@ -168,7 +179,7 @@ const [panel, updatePanel] = BUI.Component.create<BUI.PanelSection, {}>((_) => {
     const onLoadIfc = async ({ target }: { target: BUI.Button }) => {
       target.label = "Conversion in progress...";
       target.loading = true;
-      await loadIfc("/resources/ifc/school_str.ifc");
+      await loadIfc("https://thatopen.github.io/engine_components/resources/ifc/school_str.ifc");
       target.loading = false;
       target.label = "Load IFC";
     };

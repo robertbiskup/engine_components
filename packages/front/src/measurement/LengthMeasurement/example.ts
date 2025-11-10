@@ -47,7 +47,7 @@ components.init();
 */
 
 const workerUrl =
-  "/node_modules/@thatopen-platform/fragments-beta/dist/Worker/worker.mjs";
+  "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 
@@ -79,7 +79,7 @@ fragments.list.onItemSet.add(({ value: model }) => {
   :::
 */
 
-const fragPaths = ["/resources/frags/school_arq.frag"];
+const fragPaths = ["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];
 await Promise.all(
   fragPaths.map(async (path) => {
     const modelId = path.split("/").pop()?.split(".").shift();
@@ -232,6 +232,10 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           @change="${({ target }: { target: BUI.Dropdown }) => {
             const [mode] = target.value;
             measurer.mode = mode;
+            measurer.snappings =
+              mode === "edge"
+                ? [FRAGS.SnappingClass.LINE]
+                : [FRAGS.SnappingClass.POINT];
           }}"> ${measurer.modes.map(
             (mode) =>
               BUI.html`<bim-option label=${mode} value=${mode} ?checked=${mode === measurer.mode}></bim-option>`,

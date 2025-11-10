@@ -89,10 +89,10 @@ world.scene.three.background = null;
 
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(
-  "/node_modules/@thatopen-platform/fragments-beta/dist/Worker/worker.mjs",
+  "https://thatopen.github.io/engine_fragment/resources/worker.mjs",
 );
 
-const url = "/resources/test/small-civil-q2.frag";
+const url = "https://thatopen.github.io/engine_components/resources/frags/small_road.frag";
 const file = await fetch(url);
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);

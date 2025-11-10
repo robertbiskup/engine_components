@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.3.0](https://github.com/ThatOpen/engine_components/compare/v3.2.0...v3.3.0) (2025-11-10)
+
+
+### Features
+
+* Adds IDSInfo as an accessible attribute ([720f1ce](https://github.com/ThatOpen/engine_components/commit/720f1ceca819f1b33ad6d58613726d01c741e548))
+* make ifc importer accessible in ifc loader ([2827dd8](https://github.com/ThatOpen/engine_components/commit/2827dd8de527fd9df5f4e72f430cbd86d2790294))
+* Makes IDSInfo accessible by adding the attribute. ([3abab49](https://github.com/ThatOpen/engine_components/commit/3abab4916d3983b51828df3b62a13937262f65f2))
+
+
+### Bug Fixes
+
+* correct edge measure mode example error ([c0dd98f](https://github.com/ThatOpen/engine_components/commit/c0dd98f4d664c07a106f4e8fed68edf0b161fd84))
+* correct fragments manager returning all ids with empty arrays ([211bbe0](https://github.com/ThatOpen/engine_components/commit/211bbe09367eac7806b6473498c9d19d80f550ca))
+* incorrect positioning of clip edges and fills in models loaded after the first ([61e0055](https://github.com/ThatOpen/engine_components/commit/61e0055b00d3654b10a282fa24832fc367fb6424))
+
 ## [3.2.0](https://github.com/ThatOpen/engine_components/compare/v3.1.0...v3.2.0) (2025-10-23)
 
 
