@@ -733,28 +733,27 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
-    "@thatopen/components": 3.2.3
-    "@thatopen/fragments": 3.2.3
+    "@thatopen/components": 3.2.6
+    "@thatopen/fragments": 3.2.7
     "@thatopen/ui": 3.2.0
     "@thatopen/ui-obc": 3.2.2
     "@types/convert-units": 2.3.11
-    "@types/earcut": 3.0.0
+    "@types/earcut": ^2.1.4
     "@types/three": ^0.175.0
-    earcut: 3.0.1
     three: ^0.175.0
     web-ifc: 0.0.72
   peerDependencies:
-    "@thatopen/fragments": 3.2.3
+    "@thatopen/fragments": 3.2.7
     three: ">=0.175.0"
     web-ifc: ">=0.0.72"
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@3.2.3, @thatopen/components@workspace:packages/core":
+"@thatopen/components@3.2.6, @thatopen/components@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
-    "@thatopen/fragments": 3.2.3
+    "@thatopen/fragments": 3.2.7
     "@thatopen/ui": 3.2.0
     "@types/convert-units": 2.3.11
     "@types/three": 0.175.0
@@ -772,9 +771,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@thatopen/fragments@npm:3.2.3":
-  version: 3.2.3
-  resolution: "@thatopen/fragments@npm:3.2.3"
+"@thatopen/fragments@npm:3.2.7":
+  version: 3.2.7
+  resolution: "@thatopen/fragments@npm:3.2.7"
   dependencies:
     earcut: ^3.0.1
     flatbuffers: 25.2.10
@@ -783,7 +782,7 @@ __metadata:
   peerDependencies:
     three: ">=0.175"
     web-ifc: ">=0.0.72"
-  checksum: 2355320cf2c94a2347ded5c902b627fc487fbb1e72fa03e3173273019afd9a22285df94d2ec27f090c80ba2bb40b4e2fc2f02b7c7d01f8f1dae1563daed39e6b
+  checksum: 493648267a22f210692763bc2f37aaec1c2bbba6198247a4beada948c576cbc0828d7b55758a52e88e67dc04ff5317c1452257b65689d553ef72958876932362
   languageName: node
   linkType: hard
 
@@ -835,10 +834,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/earcut@npm:3.0.0":
-  version: 3.0.0
-  resolution: "@types/earcut@npm:3.0.0"
-  checksum: f36a07fe004b38116078a8548e43cf56b56d92e61af4c20cd7f95952ed18313eca9035ddf86bdce2945d8b58c4969182e47ae2196cac5ac4b5d752d094370060
+"@types/earcut@npm:^2.1.4":
+  version: 2.1.4
+  resolution: "@types/earcut@npm:2.1.4"
+  checksum: 167e1c6d60e9d964d0f496c11b5065b9d155b4c1df04fb9abcec88af2c16213999ea8ed7cddeec9475620152e7e9e99a0f118e1c8070e1396cf0f299642beb6b
   languageName: node
   linkType: hard
 
@@ -1655,7 +1654,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"earcut@npm:3.0.1, earcut@npm:^3.0.1":
+"earcut@npm:^3.0.1":
   version: 3.0.1
   resolution: "earcut@npm:3.0.1"
   checksum: ed1cc8fc10829ad41b30c574e233333a6ff1b4ad548e342491efd6a54d8e7ad5042bda029ae7c7c41c711cda9b38c1a733e7baf79569ccc43ce36450a549c415
