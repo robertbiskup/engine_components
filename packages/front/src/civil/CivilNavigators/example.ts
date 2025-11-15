@@ -115,17 +115,15 @@ model.getClippingPlanesEvent = () => {
 const alignments = await model.getAlignments();
 world.scene.three.add(alignments);
 
-/*
+/* MD
   ### 🚕 Setting up Civil 3D Navigator
   ---
 
   Now, we need to create an instance of the Civil 3D Navigator component. This will enable us to navigate through our 3D environment and interact with the model.
+
 */
 
-// Absolute alignment
-
 const navigators = components.get(OBF.CivilNavigators);
-
 const navigator = navigators.create("absolute");
 navigator.world = world;
 
@@ -210,22 +208,6 @@ await horizontalWorld.world.camera.controls.setLookAt(
   0,
   false,
 );
-
-// navigator.draw(model);
-
-/*
-  ### ⚾ Navigating to the selected point
-  ---
-
-  There are many ways to navigate to the selected point in an alignment. We will make it simple: subscribing to the highlight event, we can get some information about the highlight, such as the point that was clicked in the alignment. We will use that point to set the position of an invisible sphere that will use to move the camera with a nice animation:
-*/
-
-// const sphere = new THREE.Sphere(undefined, 20);
-
-// navigator.onHighlight.add(({ point }) => {
-//   sphere.center.copy(point);
-//   world.camera.controls.fitToSphere(sphere, true);
-// });
 
 /* MD
   ### ⏱️ Measuring the performance (optional)

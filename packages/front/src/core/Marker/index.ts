@@ -89,6 +89,26 @@ export class Marker extends OBC.Component implements OBC.Disposable {
    */
   autoCluster = true;
 
+  private static readonly DEFAULT_CLUSTER_STYLES: {
+    [key: string]: string | undefined;
+  } = {
+    backgroundColor: "#FFFFFF",
+    textColor: "#000000",
+    fontSize: "1.2rem",
+    fontWeight: "500",
+    borderRadius: "50%",
+    padding: "5px 11px",
+    textAlign: "center",
+    cursor: "pointer",
+    hoverBackgroundColor: "#BCF124",
+    transition: undefined,
+  };
+
+  // Customizable cluster element styles
+  clusterElementStyles: Partial<{ [key: string]: string | undefined }> = {
+    ...Marker.DEFAULT_CLUSTER_STYLES,
+  };
+
   /**
    * A Map containing the markers grouped by world UUID.
    * Each world can have its own set of markers.
@@ -425,10 +445,12 @@ export class Marker extends OBC.Component implements OBC.Disposable {
     div.style.padding = "5px 11px";
     div.style.textAlign = "center";
     div.addEventListener("pointerover", () => {
-      div.style.background = "#BCF124";
+      div.style.background =
+        this.clusterElementStyles.hoverBackgroundColor || "#BCF124";
     });
     div.addEventListener("pointerout", () => {
-      div.style.background = "#FFFFFF";
+      div.style.background =
+        this.clusterElementStyles.backgroundColor || "#FFFFFF";
     });
     return div;
   };
