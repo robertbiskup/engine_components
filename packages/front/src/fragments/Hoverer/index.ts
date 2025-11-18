@@ -91,11 +91,15 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
         this._meshes.onBeforeDelete.add((mesh) => {
             mesh.removeFromParent();
             mesh.geometry.dispose();
+            if (this._postproductionRenderer)
+                this._postproductionRenderer!.postproduction.needsUpdate = true;
         });
 
         this._meshes.onItemAdded.add((mesh) => {
             if (!this.world) return;
             this.world.scene.three.add(mesh);
+            if (this._postproductionRenderer)
+                this._postproductionRenderer!.postproduction.needsUpdate = true;
         });
 
         this._meshes.onCleared.add(() => {
@@ -104,6 +108,8 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
                 clearTimeout(this._hoverTimeout);
                 this._hoverTimeout = null;
             }
+            if (this._postproductionRenderer)
+                this._postproductionRenderer!.postproduction.needsUpdate = true;
         });
     }
 
@@ -116,7 +122,7 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
 
         const container = this.world.renderer.three.domElement;
         container.removeEventListener("mousemove", this.onMouseMove);
-        container.removeEventListener("mouseleave", this.onMouseMove);
+        container.removeEventListener("mouseleave", this.onMouseLeave);
         if (!active) return;
         container.addEventListener("mousemove", this.onMouseMove);
         container.addEventListener("mouseleave", this.onMouseLeave);
@@ -134,6 +140,8 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
 
     private onMouseLeave = () => {
         this._meshes.clear();
+        if (this._postproductionRenderer)
+            this._postproductionRenderer!.postproduction.needsUpdate = true;
     };
 
     private animate = async () => {
@@ -155,7 +163,7 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
             this._fadeAnimation = null;
         }
         if (this._postproductionRenderer)
-            this._postproductionRenderer!.needsUpdate = true;
+            this._postproductionRenderer!.postproduction.needsUpdate = true;
     };
 
     private isWorldWithPost(w: OBC.World | null): w is OBC.SimpleWorld<OBC.SimpleScene, OBC.OrthoPerspectiveCamera, PostproductionRenderer> {
@@ -175,6 +183,8 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
 
         if (!result) {
             this._meshes.clear();
+            if (this._postproductionRenderer)
+                this._postproductionRenderer!.postproduction.needsUpdate = true;
             return;
         }
 
@@ -204,15 +214,15 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
             };
 
             this.animate();
-        }, 100);
-        if (this._postproductionRenderer)
-            this._postproductionRenderer!.needsUpdate = true;
+            if (this._postproductionRenderer)
+                this._postproductionRenderer!.postproduction.needsUpdate = true;
+        }, 100);        
     }
 
     clear() {
         this._meshes.clear();
         if (this._postproductionRenderer)
-            this._postproductionRenderer!.needsUpdate = true;
+            this._postproductionRenderer!.postproduction.needsUpdate = true;
     }
 
     dispose() {
