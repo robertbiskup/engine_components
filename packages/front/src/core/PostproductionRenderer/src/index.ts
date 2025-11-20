@@ -44,6 +44,7 @@ export class Postproduction {
   private _excludedObjectsEnabled = false;
   private _components: OBC.Components;
   private _renderer: PostproductionRenderer;
+  private _needsUpdate = true;
 
   defaultAoParameters = {
     radius: 0.25,
@@ -77,7 +78,12 @@ export class Postproduction {
       }
     }
   }
-
+  get needsUpdate() {
+    return this._needsUpdate;
+  }
+  set needsUpdate(value: boolean) {
+    this._needsUpdate = value;
+  }
   get aoPass() {
     if (!this._aoPass) {
       throw new Error("AO pass not initialized");
@@ -289,6 +295,7 @@ export class Postproduction {
   }
 
   update() {
+    if (!this._needsUpdate) return;
     if (!this.composer) return;
     for (const material of this.invisibleMaterials) {
       material.userData.wasVisibleForPostproduction = material.visible;
@@ -298,6 +305,7 @@ export class Postproduction {
     for (const material of this.invisibleMaterials) {
       material.visible = material.userData.wasVisibleForPostproduction;
     }
+    this._needsUpdate = false;
   }
 
   dispose() {
@@ -327,6 +335,7 @@ export class Postproduction {
     if (this._glossPass) {
       this._glossPass.setSize(width, height);
     }
+    this._needsUpdate = true;
   }
 
   updateCamera() {
@@ -337,6 +346,7 @@ export class Postproduction {
     if (this._aoPass) {
       this._aoPass.camera = camera;
     }
+    this._needsUpdate = true;
   }
 
   clear() {
@@ -351,6 +361,7 @@ export class Postproduction {
     this._renderer.three.setRenderTarget(this.composer.renderTarget2);
     this._renderer.three.clear();
     this._renderer.three.setRenderTarget(null);
+    this._needsUpdate = true;
   }
 
   private initialize() {
@@ -405,6 +416,7 @@ export class Postproduction {
     );
 
     this.style = PostproductionAspect.COLOR;
+    this._needsUpdate = true;
   }
 }
 
