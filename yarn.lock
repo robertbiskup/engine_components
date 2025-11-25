@@ -734,7 +734,7 @@ __metadata:
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
     "@thatopen/components": 3.2.6
-    "@thatopen/fragments": 3.2.10
+    "@thatopen/fragments": 3.2.11
     "@thatopen/ui": 3.2.0
     "@thatopen/ui-obc": 3.2.2
     "@types/convert-units": 2.3.11
@@ -743,7 +743,7 @@ __metadata:
     three: ^0.175.0
     web-ifc: 0.0.73
   peerDependencies:
-    "@thatopen/fragments": 3.2.10
+    "@thatopen/fragments": 3.2.11
     three: ">=0.175.0"
     web-ifc: ">=0.0.73"
   languageName: unknown
@@ -753,7 +753,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
-    "@thatopen/fragments": 3.2.10
+    "@thatopen/fragments": 3.2.11
     "@thatopen/ui": 3.2.0
     "@types/convert-units": 2.3.11
     "@types/three": 0.175.0
@@ -765,15 +765,15 @@ __metadata:
     three-mesh-bvh: 0.7.0
     web-ifc: 0.0.73
   peerDependencies:
-    "@thatopen/fragments": 3.2.10
+    "@thatopen/fragments": 3.2.11
     three: ">=0.175.0"
     web-ifc: ">=0.0.73"
   languageName: unknown
   linkType: soft
 
-"@thatopen/fragments@npm:3.2.10":
-  version: 3.2.10
-  resolution: "@thatopen/fragments@npm:3.2.10"
+"@thatopen/fragments@npm:3.2.11":
+  version: 3.2.11
+  resolution: "@thatopen/fragments@npm:3.2.11"
   dependencies:
     earcut: ^3.0.1
     flatbuffers: 25.2.10
@@ -782,7 +782,7 @@ __metadata:
   peerDependencies:
     three: ">=0.175"
     web-ifc: ">=0.0.72"
-  checksum: 06d7208ae2dc17b722413427abad3a80512b312b4581b4e133da5983b3cd51ad9315cde46515110012052c0bc1e9b3dbed440fc28e7d9cf51bc8d5902836065f
+  checksum: 23ddb011c81d5faf7dbefc43a7bf71fe01e9b675ff915323652689447a8aa259343ef1a12c99a0cec3850155b9ccab59da3ede97c5abf50a2dc0a25dba9e450a
   languageName: node
   linkType: hard
 

@@ -1,4 +1,4 @@
-import{a as O,u as k,M,B as w,j as S,V as v,f as $}from"./index-CYH2W7_E.js";import{C as E,W as L,S as C,O as y,d as A,F as D,e as c}from"./graphic-vertex-picker-CyI5oVDA.js";import{P as R,a as l}from"./index-WMpzBcum.js";import{O as G}from"./index-BYIwkA7q.js";import"./index-CL8ZSJ2y.js";import"./index-B4yXPl1C.js";const d=new E,F=d.get(L),n=F.create();n.scene=new C(d);n.scene.setup();n.scene.three.background=null;const I=document.getElementById("container");n.renderer=new R(d,I);n.camera=new y(d);await n.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);d.init();const U=d.get(A),_=U.create(n);_.config.color.set(6710886);n.scene.three.background=null;const a=()=>{n.renderer.mode===c.MANUAL&&(n.renderer.needsUpdate=!0)};n.camera.controls.addEventListener("update",a);n.renderer.onResize.add(a);const N="https://thatopen.github.io/engine_fragment/resources/worker.mjs",W=await fetch(N),j=await W.blob(),B=new File([j],"worker.mjs",{type:"text/javascript"}),H=URL.createObjectURL(B),r=d.get(D);r.init(H);n.camera.controls.addEventListener("rest",()=>r.core.update(!0));n.onCameraChanged.add(e=>{for(const[,s]of r.list)s.useCamera(e.three);r.core.update(!0)});r.list.onItemSet.add(({value:e})=>{e.useCamera(n.camera.three),n.scene.three.add(e.object),r.core.update(!0)});r.core.models.materials.list.onItemSet.add(({value:e})=>{"isLodMaterial"in e&&e.isLodMaterial||(e.polygonOffset=!0,e.polygonOffsetUnits=1,e.polygonOffsetFactor=Math.random())});const T=["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];await Promise.all(T.map(async e=>{var h;const s=(h=e.split("/").pop())==null?void 0:h.split(".").shift();if(!s)return null;const f=await(await fetch(e)).arrayBuffer();return r.core.load(f,{modelId:s})}));n.renderer.postproduction.enabled=!0;n.dynamicAnchor=!1;r.core.models.materials.list.onItemSet.add(({value:e})=>{"isLodMaterial"in e&&e.isLodMaterial&&n.renderer.postproduction.basePass.isolatedMaterials.push(e)});const P=r.list.values().next().value,x=d.get(G);x.world=n;const q=await P.getItemsOfCategories([/IFCWALL/]),z=q.IFCWALL,[V,J]=z;x.addItems({[P.modelId]:new Set([V,J])});const m=new O;m.showPanel(2);document.body.append(m.dom);m.dom.style.left="0px";m.dom.style.zIndex="unset";n.renderer.onBeforeUpdate.add(()=>m.begin());n.renderer.onAfterUpdate.add(()=>m.end());k.init();const{aoPass:i,outlinePass:u,edgesPass:g,defaultAoParameters:t}=n.renderer.postproduction,o={lumaPhi:10,depthPhi:2,normalPhi:3,radius:4,radiusExponent:1,rings:2,samples:16};i.updateGtaoMaterial(t);i.updatePdMaterial(o);const p=new M(new w(1,1,1),new S({color:65280}));p.position.set(10,0,0);n.scene.three.add(p);n.renderer.postproduction.excludedObjectsPass.addExcludedMaterial(p.material);const b=v.create(()=>$`
+import{a as M,u as k,M as w,B as E,j as S,V as $,f as P}from"./index-Dnoh0VRS.js";import{C as L,W as C,S as y,O as A,d as D,F as G,e as c}from"./graphic-vertex-picker-Dkfug0og.js";import{P as R,a as l,E as v}from"./index-BKjTN4qh.js";import{O as F}from"./index-CZitVjOD.js";import"./index-CgZ7isUk.js";import"./index-CNfkRmkL.js";const d=new L,I=d.get(C),n=I.create();n.scene=new y(d);n.scene.setup();n.scene.three.background=null;const U=document.getElementById("container");n.renderer=new R(d,U);n.camera=new A(d);await n.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);d.init();const _=d.get(D),N=_.create(n);N.config.color.set(6710886);n.scene.three.background=null;const a=()=>{n.renderer.mode===c.MANUAL&&(n.renderer.needsUpdate=!0)};n.camera.controls.addEventListener("update",a);n.renderer.onResize.add(a);const W="https://thatopen.github.io/engine_fragment/resources/worker.mjs",j=await fetch(W),B=await j.blob(),H=new File([B],"worker.mjs",{type:"text/javascript"}),T=URL.createObjectURL(H),r=d.get(G);r.init(T);n.camera.controls.addEventListener("rest",()=>r.core.update(!0));n.onCameraChanged.add(e=>{for(const[,s]of r.list)s.useCamera(e.three);r.core.update(!0)});r.list.onItemSet.add(({value:e})=>{e.useCamera(n.camera.three),n.scene.three.add(e.object),r.core.update(!0)});r.core.models.materials.list.onItemSet.add(({value:e})=>{"isLodMaterial"in e&&e.isLodMaterial||(e.polygonOffset=!0,e.polygonOffsetUnits=1,e.polygonOffsetFactor=Math.random())});const q=["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];await Promise.all(q.map(async e=>{var g;const s=(g=e.split("/").pop())==null?void 0:g.split(".").shift();if(!s)return null;const O=await(await fetch(e)).arrayBuffer();return r.core.load(O,{modelId:s})}));n.renderer.postproduction.enabled=!0;n.dynamicAnchor=!1;r.core.models.materials.list.onItemSet.add(({value:e})=>{"isLodMaterial"in e&&e.isLodMaterial&&n.renderer.postproduction.basePass.isolatedMaterials.push(e)});const x=r.list.values().next().value,f=d.get(F);f.world=n;const z=await x.getItemsOfCategories([/IFCWALL/]),V=z.IFCWALL,[J,K]=V;f.addItems({[x.modelId]:new Set([J,K])});const m=new M;m.showPanel(2);document.body.append(m.dom);m.dom.style.left="0px";m.dom.style.zIndex="unset";n.renderer.onBeforeUpdate.add(()=>m.begin());n.renderer.onAfterUpdate.add(()=>m.end());k.init();const{aoPass:i,outlinePass:u,edgesPass:p,defaultAoParameters:t}=n.renderer.postproduction,o={lumaPhi:10,depthPhi:2,normalPhi:3,radius:4,radiusExponent:1,rings:2,samples:16};i.updateGtaoMaterial(t);i.updatePdMaterial(o);const h=new w(new E(1,1,1),new S({color:65280}));h.position.set(10,0,0);n.scene.three.add(h);n.renderer.postproduction.excludedObjectsPass.addExcludedMaterial(h.material);const b=$.create(()=>P`
   <bim-panel active label="Postproduction Tutorial" class="options-menu">
 
     <bim-panel-section label="General">
@@ -44,9 +44,15 @@ import{a as O,u as k,M,B as w,j as S,V as v,f as $}from"./index-CYH2W7_E.js";imp
       </bim-number-input>
 
       <bim-color-input label="Edges color"
-        color="#${g.color.getHexString()}"
-        @input="${({target:e})=>{g.color.set(e.value.color),a()}}">
+        color="#${p.color.getHexString()}"
+        @input="${({target:e})=>{p.color.set(e.value.color),a()}}">
       </bim-color-input>
+
+      <bim-dropdown label="Edges Mode"
+        @change="${({target:e})=>{p.mode=e.value[0],a()}}">
+        <bim-option checked label="Default" value="${v.DEFAULT}"></bim-option>
+        <bim-option label="Global" value="${v.GLOBAL}"></bim-option>
+      </bim-dropdown>
 
     </bim-panel-section>
 
@@ -246,8 +252,8 @@ import{a as O,u as k,M,B as w,j as S,V as v,f as $}from"./index-CYH2W7_E.js";imp
 
 
     </bim-panel>
-    `);document.body.append(b);const K=v.create(()=>$`
+    `);document.body.append(b);const Q=$.create(()=>P`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{b.classList.contains("options-menu-visible")?b.classList.remove("options-menu-visible"):b.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(K);
+    `);document.body.append(Q);
