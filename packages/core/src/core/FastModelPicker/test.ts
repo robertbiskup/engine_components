@@ -7,10 +7,10 @@
   First things first, let's install all necessary dependencies to make this example work:
 */
 
-import * as FRAGS from "@thatopen-platform/fragments-beta";
+/*import * as FRAGS from "@thatopen-platform/fragments-beta";*/
 import * as THREE from "three";
 import Stats from "stats.js";
-import * as BUI from "@thatopen-platform/ui-beta";
+/*import * as BUI from "@thatopen-platform/ui-beta";*/
 // You have to import * as OBC from "@thatopen/components"
 import * as OBC from "../..";
 

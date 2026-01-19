@@ -18,9 +18,8 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
   private HOVERER_OPACITY_KEY = "_maxHoverOpacity";
   private _hoverTimeout: number | null = null;
   private _meshes = new DataSet<THREE.Mesh>();
-    private _localId: number | null = null;
-    private _postproductionRenderer: PostproductionRenderer | null = null;
-    private _fadeAnimation: {
+  private _localId: number | null = null;
+  private _postproductionRenderer: PostproductionRenderer | null = null;
   private _fadeAnimation: {
     startTime: number;
     duration: number;
@@ -170,7 +169,6 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
         if (this._postproductionRenderer)
             this._postproductionRenderer!.postproduction.needsUpdate = true;
     };
-  };
 
     private isWorldWithPost(w: OBC.World | null): w is OBC.SimpleWorld<OBC.SimpleScene, OBC.OrthoPerspectiveCamera, PostproductionRenderer> {
         return !!w && w.renderer instanceof PostproductionRenderer;
@@ -220,9 +218,9 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
       };
 
       this.onHoverStarted.trigger(this);
-            this.animate();
-            if (this._postproductionRenderer)
-                this._postproductionRenderer!.postproduction.needsUpdate = true;
+      this.animate();
+      if (this._postproductionRenderer)
+         this._postproductionRenderer!.postproduction.needsUpdate = true;
     }, 100);
   }
 
@@ -230,7 +228,6 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
         this._meshes.clear();
     if (this._postproductionRenderer)
         this._postproductionRenderer!.postproduction.needsUpdate = true;
-
   }
 
   dispose() {
