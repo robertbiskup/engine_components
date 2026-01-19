@@ -12,16 +12,20 @@ import { PostproductionRenderer } from "../../core";
 export class Hoverer extends OBC.Component implements OBC.Disposable {
     static uuid = "26fbd870-b1b2-4b71-b747-4063d484de1b" as const;
 
-    private HOVERER_OPACITY_KEY = "_maxHoverOpacity";
-    private _hoverTimeout: number | null = null;
-    private _meshes = new DataSet<THREE.Mesh>();
+  readonly onHoverStarted = new OBC.Event<Hoverer>();
+  readonly onHoverEnded = new OBC.Event<Hoverer>();
+
+  private HOVERER_OPACITY_KEY = "_maxHoverOpacity";
+  private _hoverTimeout: number | null = null;
+  private _meshes = new DataSet<THREE.Mesh>();
     private _localId: number | null = null;
     private _postproductionRenderer: PostproductionRenderer | null = null;
     private _fadeAnimation: {
-        startTime: number;
-        duration: number;
-        fadeIn: boolean;
-    } | null = null;
+  private _fadeAnimation: {
+    startTime: number;
+    duration: number;
+    fadeIn: boolean;
+  } | null = null;
 
     private _world: OBC.World | null = null;
     set world(value: OBC.World | null) {
@@ -156,15 +160,17 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
         const opacity = value * (maxOpacity !== undefined ? maxOpacity : 1);
         this.material.opacity = opacity;
 
-        if (progress < 1) {
-            requestAnimationFrame(this.animate);
-        } else {
-            if (!fadeIn) this._meshes.clear();
-            this._fadeAnimation = null;
+    if (progress < 1) {
+      requestAnimationFrame(this.animate);
+    } else {
+      if (!fadeIn) this._meshes.clear();
+      this._fadeAnimation = null;
+      this.onHoverEnded.trigger(this);
         }
         if (this._postproductionRenderer)
             this._postproductionRenderer!.postproduction.needsUpdate = true;
     };
+  };
 
     private isWorldWithPost(w: OBC.World | null): w is OBC.SimpleWorld<OBC.SimpleScene, OBC.OrthoPerspectiveCamera, PostproductionRenderer> {
         return !!w && w.renderer instanceof PostproductionRenderer;
@@ -210,26 +216,30 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
             this._fadeAnimation = {
                 startTime: Date.now(),
                 duration: this.duration, // in milliseconds
-                fadeIn: true,
-            };
+        fadeIn: true,
+      };
 
+      this.onHoverStarted.trigger(this);
             this.animate();
             if (this._postproductionRenderer)
                 this._postproductionRenderer!.postproduction.needsUpdate = true;
-        }, 100);        
-    }
+    }, 100);
+  }
 
     clear() {
         this._meshes.clear();
-        if (this._postproductionRenderer)
-            this._postproductionRenderer!.postproduction.needsUpdate = true;
-    }
+    if (this._postproductionRenderer)
+        this._postproductionRenderer!.postproduction.needsUpdate = true;
 
-    dispose() {
-        this._enabled = false;
-        this._meshes.clear();
-        this._fadeAnimation = null;
-        this._hoverTimeout = null;
-        this.onDisposed.trigger();
-    }
+  }
+
+  dispose() {
+    this._enabled = false;
+    this._meshes.clear();
+    this._fadeAnimation = null;
+    this._hoverTimeout = null;
+    this.onHoverStarted.reset();
+    this._hoverTimeout = null;
+    this.onDisposed.trigger();
+  }
 }
