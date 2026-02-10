@@ -1,13 +1,11 @@
 import * as THREE from "three";
-/*import * as FRAGS from "@thatopen-platform/fragments-beta";*/
 import { Components } from "../../Components";
 import { Component, Event, World, Disposable } from "../../Types";
 import { Mouse } from "../../Raycasters/src/mouse";
 import { FragmentsManager } from "../../../fragments";
 
 /**
- * A fast model picker that uses color coding to identify fragment models under the mouse cursor.
- * This is much faster than raycasting for simple model identification.
+ * A fast model picker that uses color coding to identify fragment models under the mouse cursor. This is much faster than raycasting for simple model identification.
  */
 export class FastModelPicker implements Disposable {
   /** {@link Component.enabled} */
